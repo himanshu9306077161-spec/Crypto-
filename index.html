@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080d1a">
+<title>Penny Crypto — Deep Analysis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080d1a;--bg2:#0f1729;--bg3:#0a1628;--bg4:#111827;
+  --b1:#1e293b;--b2:#1e3a5f;
+  --txt:#e2e8f0;--mut:#64748b;--dim:#334155;
+  --grn:#4ade80;--gbg:#052e16;--gbd:#166534;
+  --yel:#fbbf24;--ybg:#1c1000;--ybd:#78350f;
+  --red:#f87171;--rbg:#1c0505;--rbd:#7f1d1d;
+  --blu:#60a5fa;--teal:#34d399;--pur:#a78bfa;
+  --mono:'Courier New',monospace;
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;font-size:14px}
+
+/* ── HEADER ── */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--b1);padding:10px 16px;position:sticky;top:0;z-index:99}
+.hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.app-name{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--blu);letter-spacing:1px}
+.app-sub{font-size:10px;color:var(--mut)}
+.dot{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;border:1px solid}
+.dot-live{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.dot-load{color:var(--yel);background:var(--ybg);border-color:var(--ybd);animation:blink 1s infinite}
+.dot-err{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.upd-txt{font-size:10px;color:var(--dim);font-family:var(--mono)}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:6px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:5px 13px;border-radius:20px;border:1px solid var(--b1);background:transparent;color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab.on{background:#1e3a8a;border-color:#3b82f6;color:#93c5fd}
+
+/* ── SCREENS ── */
+.scr{display:none}.scr.show{display:block}
+.pad{padding:12px 16px 90px}
+
+/* ── STAT GRID ── */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 6px}
+.sc{background:var(--bg2);border-radius:12px;padding:11px 13px;border:1px solid var(--b1)}
+.sc-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-weight:700}
+.sc-val{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1}
+.sc-sub{font-size:10px;color:var(--dim);margin-top:3px}
+
+/* ── LONGTERM BANNER ── */
+.lt-banner{margin:8px 16px;background:linear-gradient(135deg,#0c2240,#1e1040);border:1px solid var(--pur);border-radius:14px;padding:14px}
+.lt-title{font-size:10px;color:var(--pur);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px}
+.lt-coins{display:flex;flex-wrap:wrap;gap:6px}
+.lt-pill{background:#28103c;border:1px solid var(--pur);color:var(--pur);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:var(--mono)}
+.lt-sub{font-size:10px;color:var(--mut);margin-top:8px}
+
+/* ── MONTH BANNER ── */
+.month-banner{margin:6px 16px 0;background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:10px 14px}
+.mb-row{display:flex;justify-content:space-between;align-items:center}
+.mb-label{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px}
+.mb-val{font-size:12px;font-weight:700;font-family:var(--mono)}
+
+/* ── SECTION HEAD ── */
+.sec{display:flex;justify-content:space-between;padding:10px 16px 5px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700}
+
+/* ── COIN LIST ── */
+.clist{padding:0 16px 90px}
+
+/* ── COIN CARD ── */
+.card{border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--b1);background:var(--bg3);cursor:pointer}
+.card.cbuy{border-color:var(--gbd);background:#0a1e10}
+.card.cwatch{border-color:var(--ybd);background:#150e00}
+.card.cavoid{border-color:var(--rbd)}
+.card.expanded .card-detail{display:block}
+.card-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)}
+
+.cr1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cname{font-size:15px;font-weight:700;color:var(--txt)}
+.csym{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:1px}
+.ccat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;display:inline-block;margin-top:4px}
+
+.cright{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ring{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;border:2px solid}
+.rg{border-color:var(--grn);color:var(--grn);background:var(--gbg)}
+.ry{border-color:var(--yel);color:var(--yel);background:var(--ybg)}
+.rr{border-color:var(--red);color:var(--red);background:var(--rbg)}
+
+.sigp{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid}
+.sg{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.sy{color:var(--yel);background:var(--ybg);border-color:var(--ybd)}
+.sr{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+.slt{color:var(--pur);background:#28103c;border-color:var(--pur)}
+
+.prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.price{font-family:var(--mono);font-size:17px;font-weight:700}
+.chg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.cp{color:var(--grn);background:var(--gbg)}
+.cn{color:var(--red);background:var(--rbg)}
+.cz{color:var(--mut);background:var(--b1)}
+
+.mbar{background:var(--b1);border-radius:4px;height:5px;margin-bottom:8px;overflow:hidden}
+.mfill{height:100%;border-radius:4px;background:linear-gradient(90deg,#3b82f6,#10b981)}
+
+.cmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+.target{font-family:var(--mono);font-size:11px;color:var(--teal);margin-top:5px}
+
+/* ── HISTORICAL DETAIL ── */
+.hist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.hbox{background:var(--bg2);border-radius:10px;padding:10px 12px;border:1px solid var(--b1)}
+.hbox-lbl{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.hbox-val{font-family:var(--mono);font-size:14px;font-weight:700}
+.hbox-sub{font-size:10px;color:var(--dim);margin-top:2px}
+
+.yr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.yr-lbl{font-family:var(--mono);font-size:11px;color:var(--mut);width:38px;flex-shrink:0}
+.yr-bar-wrap{flex:1;background:var(--b1);border-radius:4px;height:18px;overflow:hidden;position:relative}
+.yr-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;font-family:var(--mono);white-space:nowrap}
+.yr-pos{background:var(--gbg);color:var(--grn)}
+.yr-neg{background:var(--rbg);color:var(--red)}
+
+.month-chart{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:12px}
+.mc-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mc-lbl{font-size:8px;color:var(--mut);text-align:center}
+.mc-bar{width:100%;border-radius:3px;min-height:4px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700}
+.mc-p{background:var(--gbg);color:var(--grn)}
+.mc-n{background:var(--rbg);color:var(--red)}
+.mc-curr{outline:2px solid var(--blu)}
+
+.ath-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.ath-lbl{color:var(--mut)}
+.ath-val{font-family:var(--mono);font-weight:700}
+
+.conf-badge{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700}
+.conf-vh{background:#0c2d5c;color:#93c5fd}
+.conf-h{background:var(--gbg);color:var(--grn)}
+.conf-m{background:var(--ybg);color:var(--yel)}
+.conf-l{background:var(--rbg);color:var(--red)}
+
+/* ── CATEGORY COLORS ── */
+.Major{background:#0c2d5c;color:#93c5fd}
+.Meme{background:#3b0a28;color:#f9a8d4}
+.DeFi{background:#1e1040;color:#c4b5fd}
+.Gaming{background:#042e1e;color:#6ee7b7}
+.L1{background:#3b1200;color:#fdba74}
+.Web3{background:#042840;color:#7dd3fc}
+.AI{background:#28103c;color:#d8b4fe}
+.Sports{background:#052e16;color:#4ade80}
+.Misc{background:#1e2836;color:#94a3b8}
+
+/* ── LOADING / ERROR ── */
+.ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:14px;padding:20px;text-align:center}
+.spin{width:36px;height:36px;border:3px solid var(--b1);border-top-color:var(--blu);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--b1);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:99}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;border:none;background:transparent;color:var(--dim);font-size:10px;font-weight:600}
+.nb.on{color:var(--blu)}
+.ni{font-size:20px;line-height:1}
+
+/* ── PROFIT SCREEN ── */
+.rate-box{background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.rate-lbl{font-size:11px;color:var(--mut);margin-bottom:6px}
+.rate-inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--blu);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center}
+.rate-inp:focus{outline:none;border-color:var(--blu)}
+.pccard{background:#0a1e10;border:1px solid var(--gbd);border-radius:14px;padding:14px;margin-bottom:10px}
+.pchead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pcname{font-size:14px;font-weight:700}
+.pcsub{font-size:10px;color:var(--mut);margin-top:2px}
+.pcinp-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.pcinp-lbl{font-size:12px;color:var(--mut);flex-shrink:0}
+.pcinp{flex:1;background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:6px 10px;color:var(--blu);font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
+.pcinp:focus{outline:none;border-color:var(--blu)}
+.pcmeta{font-size:11px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:4px}
+.pcprofit{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--grn)}
+.pctotal{background:#0f6e4a;border:1px solid #10b981;border-radius:14px;padding:14px;margin-top:4px;display:flex;justify-content:space-between;align-items:center}
+.ptlbl{font-size:11px;color:#6ee7b7;font-weight:700}
+.ptval{font-family:var(--mono);font-size:22px;font-weight:700;color:#fff}
+
+/* ── ABOUT ── */
+.acard{background:var(--bg2);border:1px solid var(--b1);border-radius:14px;padding:14px;margin-bottom:10px}
+.atitle{font-size:11px;font-weight:700;color:var(--blu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.acard p,.acard li{font-size:13px;color:var(--mut);line-height:1.8}
+.acard li{margin-left:16px}
+.warn{background:var(--rbg);border-color:var(--rbd)}
+.warn .atitle{color:var(--red)}
+.warn p{color:#fca5a5}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div><div class="app-name">PENNY CRYPTO</div><div class="app-sub">5-Year Historical Analysis · Daily Auto-Update</div></div>
+    <div class="dot dot-load" id="dot">Loading</div>
+  </div>
+  <div class="upd-txt" id="upd">Fetching data...</div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="scr show" id="s-dash">
+  <div class="tabs">
+    <button class="tab on"  onclick="flt('all',this)">All</button>
+    <button class="tab"     onclick="flt('BUY',this)">🟢 BUY</button>
+    <button class="tab"     onclick="flt('WATCH',this)">🟡 WATCH</button>
+    <button class="tab"     onclick="flt('AVOID',this)">🔴 AVOID</button>
+    <button class="tab"     onclick="flt('STRONG BUY',this)">⭐ Strong</button>
+    <button class="tab"     onclick="flt('Major',this)">Major</button>
+    <button class="tab"     onclick="flt('Meme',this)">Meme</button>
+    <button class="tab"     onclick="flt('Gaming',this)">Gaming</button>
+    <button class="tab"     onclick="flt('AI/Data',this)">AI</button>
+  </div>
+
+  <div class="sgrid" id="stats"></div>
+  <div id="lt-banner"></div>
+  <div id="month-banner"></div>
+
+  <div class="sec"><span id="sec-lbl">All Coins</span><span id="sec-cnt" style="color:var(--dim);font-family:var(--mono)"></span></div>
+  <div class="clist" id="clist">
+    <div class="ctr"><div class="spin"></div><p style="color:var(--blu);font-family:var(--mono);font-size:12px">Loading deep analysis...</p><p style="color:var(--dim);font-size:11px">Fetching 5 years of data</p></div>
+  </div>
+</div>
+
+<!-- ── PROFIT CALC ── -->
+<div class="scr pad" id="s-profit">
+  <div class="rate-box">
+    <div class="rate-lbl">USD → INR Exchange Rate (edit if needed)</div>
+    <input class="rate-inp" type="number" id="inr" value="84" oninput="renderProfit()">
+  </div>
+  <div id="plist"></div>
+</div>
+
+<!-- ── ABOUT ── -->
+<div class="scr pad" id="s-about">
+  <div class="acard">
+    <div class="atitle">How Data Is Collected</div>
+    <p>Every day at <strong style="color:var(--blu)">9 AM IST</strong> GitHub automatically runs a script that:</p>
+    <ul style="margin-top:8px">
+      <li>Fetches live prices from <strong style="color:var(--blu)">Binance</strong> — same source as your exchange</li>
+      <li>Downloads <strong style="color:var(--blu)">5 years of daily history</strong> per coin from CoinGecko</li>
+      <li>Calculates yearly returns, monthly patterns, support/resistance, volatility</li>
+      <li>Saves everything to a file your phone reads instantly</li>
+    </ul>
+  </div>
+  <div class="acard">
+    <div class="atitle">How to Read the Cards</div>
+    <p>Tap any coin card to expand it and see full historical analysis. The circle shows the <strong style="color:var(--blu)">Trend Score (0–100)</strong>. The ⭐ badge means the coin has a strong long-term history (2+ years, avg return > 30%).</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Signal Explanation</div>
+    <p>🟢 <strong style="color:var(--grn)">BUY</strong> — Score ≥ 65 + positive 24h. Good today.</p>
+    <p style="margin-top:6px">⭐ <strong style="color:var(--pur)">STRONG BUY</strong> — BUY signal + historically strong coin (years of data confirm it).</p>
+    <p style="margin-top:6px">🟡 <strong style="color:var(--yel)">WATCH</strong> — Score 40–64. Not ready yet.</p>
+    <p style="margin-top:6px">🔴 <strong style="color:var(--red)">AVOID</strong> — Weak momentum today.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Monthly Seasonality</div>
+    <p>Each coin card shows a bar chart of its average return by month over the past 5 years. Green bars = historically good months to buy. The current month is highlighted with a blue outline. If you are in a green month, that coin has historically performed well right now.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Risk Rules</div>
+    <ul>
+      <li>Never invest more than 5% of savings in one coin</li>
+      <li>Set stop-loss at −5% always</li>
+      <li>Take profit at +8% using a limit sell order</li>
+      <li>Penny crypto is HIGH RISK — prices can drop 50%+ in hours</li>
+      <li>Historical performance does NOT guarantee future results</li>
+    </ul>
+  </div>
+  <div class="acard warn">
+    <div class="atitle">Disclaimer</div>
+    <p>For educational purposes only. Not financial advice. Crypto is unregulated. You may lose all your money. Always do your own research.</p>
+  </div>
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="bnav">
+  <button class="nb on" id="n1" onclick="nav('dash')"><span class="ni">📊</span>Dashboard</button>
+  <button class="nb"    id="n2" onclick="nav('profit')"><span class="ni">💰</span>Profit</button>
+  <button class="nb"    id="n3" onclick="nav('about')"><span class="ni">ℹ️</span>About</button>
+</nav>
+
+<script>
+let coins=[], curFlt='all';
+
+const $=id=>document.getElementById(id);
+
+function fp(p){
+  if(!p||p===0)return'$0';
+  if(p<0.000001)return'$'+p.toFixed(9);
+  if(p<0.0001)return'$'+p.toFixed(8);
+  if(p<0.01)return'$'+p.toFixed(6);
+  if(p<1)return'$'+p.toFixed(4);
+  return'$'+p.toFixed(2);
+}
+function pct(n){const s=Number(n);return(s>=0?'+':'')+s.toFixed(2)+'%'}
+function inr(n){return'₹'+Math.round(n).toLocaleString('en-IN')}
+function catCls(c){return{Major:'Major',Meme:'Meme',DeFi:'DeFi',Gaming:'Gaming','L1/L2':'L1',Web3:'Web3','AI/Data':'AI',Sports:'Sports',Misc:'Misc'}[c]||'Misc'}
+function confCls(c){return{['Very High']:'conf-vh',High:'conf-h',Medium:'conf-m',Low:'conf-l'}[c]||'conf-l'}
+
+async function load(){
+  $('dot').className='dot dot-load';
+  $('dot').textContent='Loading';
+  try{
+    const r=await fetch('data/prices.json?v='+Date.now());
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    coins=d.coins||[];
+
+    $('upd').textContent='Updated: '+(d.updatedAtIST||'');
+    $('dot').className='dot dot-live';
+    $('dot').textContent='LIVE';
+
+    // Update tab counts
+    const b=coins.filter(c=>c.signal==='BUY').length;
+    const w=coins.filter(c=>c.signal==='WATCH').length;
+    const av=coins.filter(c=>c.signal==='AVOID').length;
+    const sb=coins.filter(c=>c.history&&c.history.historicalSignal==='STRONG BUY'&&c.signal==='BUY').length;
+    document.querySelectorAll('.tab')[1].textContent=`🟢 BUY (${b})`;
+    document.querySelectorAll('.tab')[2].textContent=`🟡 WATCH (${w})`;
+    document.querySelectorAll('.tab')[3].textContent=`🔴 AVOID (${av})`;
+    document.querySelectorAll('.tab')[4].textContent=`⭐ Strong (${sb})`;
+
+    renderStats(d);
+    renderLongTerm(d);
+    renderMonthBanner(d);
+    renderCoins();
+    renderProfit();
+  }catch(e){
+    $('dot').className='dot dot-err';
+    $('dot').textContent='ERROR';
+    $('upd').textContent='Failed to load';
+    $('clist').innerHTML=`<div class="ctr"><p style="color:var(--red);font-size:13px">Error: ${e.message}<br><br>Check that prices.json is in your repo's data/ folder.</p></div>`;
+  }
+}
+
+function renderStats(d){
+  const b=coins.filter(c=>c.signal==='BUY').length;
+  const w=coins.filter(c=>c.signal==='WATCH').length;
+  const top=[...coins].sort((a,b2)=>b2.change24h-a.change24h)[0];
+  const best=[...coins].sort((a,b2)=>b2.combinedScore-a.combinedScore)[0];
+  $('stats').innerHTML=`
+    <div class="sc"><div class="sc-lbl">Buy Today</div><div class="sc-val" style="color:var(--grn)">${b}</div><div class="sc-sub">8% target</div></div>
+    <div class="sc"><div class="sc-lbl">Watch</div><div class="sc-val" style="color:var(--yel)">${w}</div><div class="sc-sub">Monitor</div></div>
+    <div class="sc"><div class="sc-lbl">Top 24h</div><div class="sc-val" style="color:var(--blu);font-size:15px">${top?top.symbol:'—'}</div><div class="sc-sub">${top?pct(top.change24h):''}</div></div>
+    <div class="sc"><div class="sc-lbl">Best Score</div><div class="sc-val" style="color:var(--pur);font-size:15px">${best?best.symbol:'—'}</div><div class="sc-sub">${best?best.combinedScore+'/100':''}</div></div>`;
+}
+
+function renderLongTerm(d){
+  const picks=d.longtermPicks||[];
+  if(!picks.length){$('lt-banner').innerHTML='';return;}
+  $('lt-banner').innerHTML=`
+    <div class="lt-banner">
+      <div class="lt-title">⭐ Long-Term Strong Picks (Based on Years of Data)</div>
+      <div class="lt-coins">${picks.map(s=>`<span class="lt-pill">${s}</span>`).join('')}</div>
+      <div class="lt-sub">These coins have shown consistently strong yearly returns over 2+ years of historical data. Tap any coin for full year-by-year breakdown.</div>
+    </div>`;
+}
+
+function renderMonthBanner(d){
+  const m=d.currentMonth||'';
+  const goodCoins=coins.filter(c=>c.goodMonthToBuy&&c.signal==='BUY').length;
+  $('month-banner').innerHTML=`
+    <div class="month-banner">
+      <div class="mb-row">
+        <div><div class="mb-label">Current Month</div><div class="mb-val" style="color:var(--blu)">${m}</div></div>
+        <div style="text-align:right"><div class="mb-label">Good Month for</div><div class="mb-val" style="color:var(--grn)">${goodCoins} BUY coins</div></div>
+      </div>
+    </div>`;
+}
+
+function renderCoins(){
+  let list;
+  if(curFlt==='all') list=coins;
+  else if(curFlt==='STRONG BUY') list=coins.filter(c=>c.history&&c.history.historicalSignal==='STRONG BUY'&&c.signal==='BUY');
+  else if(['BUY','WATCH','AVOID'].includes(curFlt)) list=coins.filter(c=>c.signal===curFlt);
+  else list=coins.filter(c=>c.category===curFlt);
+
+  const lbls={all:'All Coins',BUY:'BUY Signals',WATCH:'Watch List',AVOID:'Avoid Today','STRONG BUY':'Strong Long-Term',Major:'Major Coins',Meme:'Meme Coins',Gaming:'Gaming',DeFi:'DeFi','AI/Data':'AI / Data',Sports:'Sports'};
+  $('sec-lbl').textContent=lbls[curFlt]||curFlt;
+  $('sec-cnt').textContent=list.length+' coins';
+
+  if(!list.length){
+    $('clist').innerHTML=`<div class="ctr"><p style="color:var(--mut)">No coins match this filter.</p></div>`;
+    return;
+  }
+
+  $('clist').innerHTML=list.map((c,i)=>buildCard(c,i)).join('');
+}
+
+function buildCard(c,i){
+  const h=c.history||{};
+  const isStrongLT=h.historicalSignal==='STRONG BUY'&&c.signal==='BUY';
+  const ringCls=c.combinedScore>=65?'rg':c.combinedScore>=40?'ry':'rr';
+  const sigCls=c.signal==='BUY'?'sg':c.signal==='WATCH'?'sy':'sr';
+  const cardCls=c.signal==='BUY'?'cbuy':c.signal==='WATCH'?'cwatch':'cavoid';
+  const chgCls=c.change24h>0?'cp':c.change24h<0?'cn':'cz';
+  const est=c.change24h>0?Math.round(8/Math.max(c.change24h,0.1))+'d':'—';
+  const d7c=c.change7d>=0?'var(--grn)':'var(--red)';
+  const d30c=c.change30d>=0?'var(--grn)':'var(--red)';
+  const goodM=c.goodMonthToBuy;
+
+  // Monthly chart
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mAvg=h.monthlyAvgReturn||{};
+  const currM=h.currentMonth||'';
+  const maxAbs=Math.max(1,...Object.values(mAvg).map(v=>Math.abs(v)));
+
+  const monthChart=months.map(m=>{
+    const v=mAvg[m]||0;
+    const h2=Math.max(4,Math.round(Math.abs(v)/maxAbs*40));
+    const cls=(v>=0?'mc-p':'mc-n')+(m===currM?' mc-curr':'');
+    return`<div class="mc-col">
+      <div class="mc-bar ${cls}" style="height:${h2}px">${Math.abs(v)>5?Math.round(v)+'%':''}</div>
+      <div class="mc-lbl">${m.substring(0,1)}</div>
+    </div>`;
+  }).join('');
+
+  // Yearly bars
+  const yr=h.yearlyReturns||{};
+  const yearBars=Object.entries(yr).sort((a,b)=>a[0]-b[0]).map(([year,ret])=>{
+    const w=Math.min(100,Math.max(4,Math.abs(ret)/2));
+    const cls=ret>=0?'yr-pos':'yr-neg';
+    return`<div class="yr-row">
+      <div class="yr-lbl">${year}</div>
+      <div class="yr-bar-wrap">
+        <div class="yr-bar-fill ${cls}" style="width:${w}%">${ret>0?'+':''}${ret}%</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const confCl=confCls(h.dataConfidence||'Low');
+
+  return`<div class="card ${cardCls}" id="card${i}" onclick="toggle(${i})">
+    <div class="cr1">
+      <div>
+        <div class="cname">${c.name}</div>
+        <div class="csym">${c.symbol}</div>
+        <span class="ccat ${catCls(c.category)}">${c.category}</span>
+        ${goodM?`<span style="font-size:9px;color:var(--grn);margin-left:6px;font-weight:700">✓ Good month</span>`:''}
+      </div>
+      <div class="cright">
+        <div class="ring ${ringCls}">${c.combinedScore}</div>
+        ${isStrongLT?`<span class="sigp slt">⭐ STRONG</span>`:`<span class="sigp ${sigCls}">${c.signal}</span>`}
+      </div>
+    </div>
+    <div class="prow">
+      <div class="price">${fp(c.price)}</div>
+      <span class="chg ${chgCls}">${pct(c.change24h)}</span>
+    </div>
+    <div class="mbar"><div class="mfill" style="width:${Math.min(100,Math.max(4,c.combinedScore))}%"></div></div>
+    <div class="cmeta">
+      <span>7d: <span style="color:${d7c}">${pct(c.change7d)}</span></span>
+      <span>30d: <span style="color:${d30c}">${pct(c.change30d)}</span></span>
+      <span>Est: ${est}</span>
+    </div>
+    <div class="target">8% target → ${fp(c.target8pct)}</div>
+
+    <div class="card-detail">
+      <!-- Historical summary -->
+      <div class="hist-grid">
+        <div class="hbox">
+          <div class="hbox-lbl">Long-Term Signal</div>
+          <div class="hbox-val" style="color:${h.historicalSignal==='STRONG BUY'?'var(--pur)':h.historicalSignal==='BUY'?'var(--grn)':h.historicalSignal==='CAUTION'?'var(--red)':'var(--yel)'}">${h.historicalSignal||'—'}</div>
+          <div class="hbox-sub">Based on ${h.yearsOfData||0} years data</div>
+        </div>
+        <div class="hbox">
+          <div class="hbox-lbl">Data Confidence</div>
+          <div class="hbox-val"><span class="conf-badge ${confCl}">${h.dataConfidence||'Low'}</span></div>
+          <div class="hbox-sub">${h.totalDataPoints||0} daily candles</div>
+        </div>
+        <div class="hbox">
+          <div class="hbox-lbl">Avg Yearly Return</div>
+          <div class="hbox-val" style="color:${(h.avgYearlyReturn||0)>=0?'var(--grn)':'var(--red)'}">${h.avgYearlyReturn!=null?(h.avgYearlyReturn>0?'+':'')+h.avgYearlyReturn+'%':'—'}</div>
+          <div class="hbox-sub">Historical average</div>
+        </div>
+        <div class="hbox">
+          <div class="hbox-lbl">Win Rate</div>
+          <div class="hbox-val" style="color:${(h.winRate||0)>=50?'var(--grn)':'var(--red)'}">${h.winRate!=null?h.winRate+'%':'—'}</div>
+          <div class="hbox-sub">Positive months</div>
+        </div>
+        <div class="hbox">
+          <div class="hbox-lbl">Best Month (Buy)</div>
+          <div class="hbox-val" style="color:var(--grn)">${h.bestMonth||'—'}</div>
+          <div class="hbox-sub">Historically strongest</div>
+        </div>
+        <div class="hbox">
+          <div class="hbox-lbl">Volatility</div>
+          <div class="hbox-val" style="color:${h.volatilityLabel==='Low'?'var(--grn)':h.volatilityLabel==='Medium'?'var(--yel)':'var(--red)'}">${h.volatilityLabel||'—'}</div>
+          <div class="hbox-sub">Daily price swings</div>
+        </div>
+      </div>
+
+      <!-- Monthly seasonality chart -->
+      ${Object.keys(mAvg).length>0?`
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">
+        Monthly Avg Return <span style="color:var(--blu);border:1px solid var(--blu);padding:1px 6px;border-radius:4px;margin-left:6px">= Current Month</span>
+      </div>
+      <div class="month-chart">${monthChart}</div>`:''}
+
+      <!-- Yearly performance -->
+      ${yearBars?`
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Year-by-Year Performance</div>
+      ${yearBars}`:''}
+
+      <!-- ATH / ATL -->
+      <div style="margin-top:12px">
+        <div class="ath-row"><span class="ath-lbl">All-Time High</span><span class="ath-val" style="color:var(--grn)">${fp(c.ath||0)} <span style="font-size:10px;color:var(--dim)">${c.athDate||''}</span></span></div>
+        <div class="ath-row"><span class="ath-lbl">% Below ATH</span><span class="ath-val" style="color:var(--red)">${c.athDrop||0}%</span></div>
+        <div class="ath-row"><span class="ath-lbl">1-Year Change</span><span class="ath-val" style="color:${(c.change1y||0)>=0?'var(--grn)':'var(--red)'}">${pct(c.change1y||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Support</span><span class="ath-val">${fp(h.support||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Resistance</span><span class="ath-val">${fp(h.resistance||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">1-Year Trend</span><span class="ath-val" style="color:${(h.trend1y||0)>=0?'var(--grn)':'var(--red)'}">${h.trendLabel||'—'} (${(h.trend1y||0)>0?'+':''}${h.trend1y||0}%)</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggle(i){
+  const el=document.getElementById('card'+i);
+  el.classList.toggle('expanded');
+}
+
+function flt(f,el){
+  curFlt=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  if(coins.length)renderCoins();
+}
+
+function renderProfit(){
+  const buys=coins.filter(c=>c.signal==='BUY').slice(0,10);
+  if(!buys.length){
+    $('plist').innerHTML=`<div class="ctr"><p style="color:var(--mut);font-size:13px">No BUY signals right now.</p></div>`;
+    return;
+  }
+  const defs=[100000,75000,50000,40000,30000,25000,20000,15000,10000,10000];
+  let ti=0,tp=0;
+  const html=buys.map((c,i)=>{
+    const inv=defs[i]||10000;
+    const prof=Math.round(inv*0.08);
+    ti+=inv; tp+=prof;
+    const h=c.history||{};
+    const hsig=h.historicalSignal||'';
+    return`<div class="pccard">
+      <div class="pchead">
+        <div>
+          <div class="pcname">${c.name} (${c.symbol})</div>
+          <div class="pcsub">Score ${c.combinedScore}/100 · ${hsig||c.signal} historically · ${h.dataConfidence||'Low'} confidence</div>
+        </div>
+        ${hsig==='STRONG BUY'?`<span class="sigp slt">⭐</span>`:`<span class="sigp sg">BUY</span>`}
+      </div>
+      <div class="pcinp-row">
+        <span class="pcinp-lbl">Invest (₹)</span>
+        <input class="pcinp" type="number" value="${inv}" data-i="${i}" oninput="recalc(this)">
+      </div>
+      <div class="pcmeta">
+        <span>Live: ${fp(c.price)}</span>
+        <span>Target: ${fp(c.target8pct)}</span>
+        <span>Avg/yr: ${h.avgYearlyReturn!=null?(h.avgYearlyReturn>0?'+':'')+h.avgYearlyReturn+'%':'—'}</span>
+      </div>
+      <div class="pcprofit" id="pa${i}">+ ${inr(prof)}</div>
+    </div>`;
+  }).join('');
+  $('plist').innerHTML=html+`
+    <div class="pctotal">
+      <div><div class="ptlbl">Total Invested</div><div style="font-family:var(--mono);font-size:13px;color:#6ee7b7;margin-top:3px">${inr(ti)}</div></div>
+      <div style="text-align:right"><div class="ptlbl">8% Profit</div><div class="ptval" id="ptot">+ ${inr(tp)}</div></div>
+    </div>`;
+}
+
+function recalc(el){
+  const i=parseInt(el.dataset.i);
+  const v=parseFloat(el.value)||0;
+  const pa=document.getElementById('pa'+i);
+  if(pa)pa.textContent='+ '+inr(Math.round(v*0.08));
+  let t=0;
+  document.querySelectorAll('.pcinp').forEach(inp=>t+=Math.round((parseFloat(inp.value)||0)*0.08));
+  const pt=$('ptot');
+  if(pt)pt.textContent='+ '+inr(t);
+}
+
+function nav(s){
+  document.querySelectorAll('.scr').forEach(el=>el.classList.remove('show'));
+  document.getElementById('s-'+s).classList.add('show');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  $({dash:'n1',profit:'n2',about:'n3'}[s]).classList.add('on');
+}
+
+load();
+setInterval(load, 10*60*1000);
+</script>
+</body>
+</html>
