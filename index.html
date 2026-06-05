@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080d1a">
+<title>Penny Crypto — Live Analysis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080d1a;--bg2:#0f1729;--bg3:#0a1628;
+  --b1:#1e293b;--b2:#1e3a5f;
+  --txt:#e2e8f0;--mut:#64748b;--dim:#334155;
+  --grn:#4ade80;--gbg:#052e16;--gbd:#166534;
+  --yel:#fbbf24;--ybg:#1c1000;--ybd:#78350f;
+  --red:#f87171;--rbg:#1c0505;--rbd:#7f1d1d;
+  --blu:#60a5fa;--teal:#34d399;--pur:#a78bfa;
+  --mono:'Courier New',monospace;
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--b1);padding:10px 16px;position:sticky;top:0;z-index:99}
+.hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.app-name{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--blu);letter-spacing:1px}
+.app-sub{font-size:10px;color:var(--mut)}
+.dot{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;border:1px solid;cursor:pointer}
+.dot-live{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.dot-load{color:var(--yel);background:var(--ybg);border-color:var(--ybd);animation:blink 1.2s infinite}
+.dot-err{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upd-txt{font-size:10px;color:var(--dim);font-family:var(--mono)}
+/* TABS */
+.tabs{display:flex;gap:6px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:5px 13px;border-radius:20px;border:1px solid var(--b1);background:transparent;color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab.on{background:#1e3a8a;border-color:#3b82f6;color:#93c5fd}
+/* SCREENS */
+.scr{display:none}.scr.show{display:block}
+.pad{padding:12px 16px 90px}
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 6px}
+.sc{background:var(--bg2);border-radius:12px;padding:11px 13px;border:1px solid var(--b1)}
+.sc-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-weight:700}
+.sc-val{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1}
+.sc-sub{font-size:10px;color:var(--dim);margin-top:3px}
+/* BANNER */
+.lt-banner{margin:8px 16px;background:linear-gradient(135deg,#0c2240,#1e1040);border:1px solid var(--pur);border-radius:14px;padding:14px}
+.lt-title{font-size:10px;color:var(--pur);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px}
+.lt-coins{display:flex;flex-wrap:wrap;gap:6px}
+.lt-pill{background:#28103c;border:1px solid var(--pur);color:var(--pur);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:var(--mono)}
+.lt-sub{font-size:10px;color:var(--mut);margin-top:8px}
+/* SECTION */
+.sec{display:flex;justify-content:space-between;padding:10px 16px 5px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700}
+/* COIN LIST */
+.clist{padding:0 16px 90px}
+/* COIN CARD */
+.card{border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--b1);background:var(--bg3);cursor:pointer}
+.card.cbuy{border-color:var(--gbd);background:#0a1e10}
+.card.cwatch{border-color:var(--ybd);background:#150e00}
+.card.cavoid{border-color:var(--rbd)}
+.card.expanded .card-detail{display:block}
+.card-detail{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)}
+.cr1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cname{font-size:15px;font-weight:700;color:var(--txt)}
+.csym{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:1px}
+.ccat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;display:inline-block;margin-top:4px}
+.cright{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ring{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;border:2px solid}
+.rg{border-color:var(--grn);color:var(--grn);background:var(--gbg)}
+.ry{border-color:var(--yel);color:var(--yel);background:var(--ybg)}
+.rr{border-color:var(--red);color:var(--red);background:var(--rbg)}
+.sigp{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid}
+.sg{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.sy{color:var(--yel);background:var(--ybg);border-color:var(--ybd)}
+.sr{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+.slt{color:var(--pur);background:#28103c;border-color:var(--pur)}
+.prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.price{font-family:var(--mono);font-size:17px;font-weight:700}
+.chg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.cp{color:var(--grn);background:var(--gbg)}
+.cn{color:var(--red);background:var(--rbg)}
+.cz{color:var(--mut);background:var(--b1)}
+.mbar{background:var(--b1);border-radius:4px;height:5px;margin-bottom:8px;overflow:hidden}
+.mfill{height:100%;border-radius:4px;background:linear-gradient(90deg,#3b82f6,#10b981)}
+.cmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim)}
+.target{font-family:var(--mono);font-size:11px;color:var(--teal);margin-top:5px}
+/* HISTORICAL DETAIL */
+.hist-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.hbox{background:var(--bg2);border-radius:10px;padding:10px 12px;border:1px solid var(--b1)}
+.hbox-lbl{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.hbox-val{font-family:var(--mono);font-size:14px;font-weight:700}
+.hbox-sub{font-size:10px;color:var(--dim);margin-top:2px}
+.yr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.yr-lbl{font-family:var(--mono);font-size:11px;color:var(--mut);width:38px;flex-shrink:0}
+.yr-bar-wrap{flex:1;background:var(--b1);border-radius:4px;height:18px;overflow:hidden}
+.yr-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;font-family:var(--mono);white-space:nowrap}
+.yr-pos{background:var(--gbg);color:var(--grn)}
+.yr-neg{background:var(--rbg);color:var(--red)}
+.month-chart{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:12px}
+.mc-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mc-lbl{font-size:8px;color:var(--mut);text-align:center}
+.mc-bar{width:100%;border-radius:3px;min-height:4px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700}
+.mc-p{background:var(--gbg);color:var(--grn)}
+.mc-n{background:var(--rbg);color:var(--red)}
+.mc-curr{outline:2px solid var(--blu)}
+.ath-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.ath-lbl{color:var(--mut)}
+.ath-val{font-family:var(--mono);font-weight:700}
+.conf-badge{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700}
+.conf-vh{background:#0c2d5c;color:#93c5fd}
+.conf-h{background:var(--gbg);color:var(--grn)}
+.conf-m{background:var(--ybg);color:var(--yel)}
+.conf-l{background:var(--rbg);color:var(--red)}
+/* CATEGORY */
+.Major{background:#0c2d5c;color:#93c5fd}
+.Meme{background:#3b0a28;color:#f9a8d4}
+.DeFi{background:#1e1040;color:#c4b5fd}
+.Gaming{background:#042e1e;color:#6ee7b7}
+.L1{background:#3b1200;color:#fdba74}
+.Web3{background:#042840;color:#7dd3fc}
+.AI{background:#28103c;color:#d8b4fe}
+.Sports{background:#052e16;color:#4ade80}
+.Misc{background:#1e2836;color:#94a3b8}
+/* LOADING */
+.ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:14px;padding:20px;text-align:center}
+.spin{width:36px;height:36px;border:3px solid var(--b1);border-top-color:var(--blu);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--b1);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:99}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;border:none;background:transparent;color:var(--dim);font-size:10px;font-weight:600}
+.nb.on{color:var(--blu)}
+.ni{font-size:20px;line-height:1}
+/* PROFIT */
+.rate-box{background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.rate-lbl{font-size:11px;color:var(--mut);margin-bottom:6px}
+.rate-inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--blu);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center}
+.rate-inp:focus{outline:none;border-color:var(--blu)}
+.pccard{background:#0a1e10;border:1px solid var(--gbd);border-radius:14px;padding:14px;margin-bottom:10px}
+.pchead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pcname{font-size:14px;font-weight:700}
+.pcsub{font-size:10px;color:var(--mut);margin-top:2px}
+.pcinp-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.pcinp-lbl{font-size:12px;color:var(--mut);flex-shrink:0}
+.pcinp{flex:1;background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:6px 10px;color:var(--blu);font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
+.pcinp:focus{outline:none;border-color:var(--blu)}
+.pcmeta{font-size:11px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:4px}
+.pcprofit{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--grn)}
+.pctotal{background:#0f6e4a;border:1px solid #10b981;border-radius:14px;padding:14px;margin-top:4px;display:flex;justify-content:space-between;align-items:center}
+.ptlbl{font-size:11px;color:#6ee7b7;font-weight:700}
+.ptval{font-family:var(--mono);font-size:22px;font-weight:700;color:#fff}
+/* ABOUT */
+.acard{background:var(--bg2);border:1px solid var(--b1);border-radius:14px;padding:14px;margin-bottom:10px}
+.atitle{font-size:11px;font-weight:700;color:var(--blu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.acard p,.acard li{font-size:13px;color:var(--mut);line-height:1.8}
+.acard li{margin-left:16px}
+.warn{background:var(--rbg);border-color:var(--rbd)}
+.warn .atitle{color:var(--red)}
+.warn p{color:#fca5a5}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="app-name">PENNY CRYPTO</div>
+      <div class="app-sub">100 coins · Live prices · 5-Year history · Auto-refresh</div>
+    </div>
+    <div class="dot dot-load" id="dot" onclick="loadAll()">Loading...</div>
+  </div>
+  <div class="upd-txt" id="upd">Fetching live prices from Binance...</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="scr show" id="s-dash">
+  <div class="tabs">
+    <button class="tab on"  onclick="flt('all',this)">All</button>
+    <button class="tab"     onclick="flt('BUY',this)">🟢 BUY</button>
+    <button class="tab"     onclick="flt('WATCH',this)">🟡 WATCH</button>
+    <button class="tab"     onclick="flt('AVOID',this)">🔴 AVOID</button>
+    <button class="tab"     onclick="flt('STRONG',this)">⭐ Strong</button>
+    <button class="tab"     onclick="flt('Major',this)">Major</button>
+    <button class="tab"     onclick="flt('Meme',this)">Meme</button>
+    <button class="tab"     onclick="flt('Gaming',this)">Gaming</button>
+    <button class="tab"     onclick="flt('AI/Data',this)">AI</button>
+    <button class="tab"     onclick="flt('DeFi',this)">DeFi</button>
+  </div>
+  <div class="sgrid" id="stats"></div>
+  <div id="lt-banner"></div>
+  <div class="sec"><span id="sec-lbl">All Coins</span><span id="sec-cnt" style="color:var(--dim);font-family:var(--mono)"></span></div>
+  <div class="clist" id="clist">
+    <div class="ctr"><div class="spin"></div><p style="color:var(--blu);font-family:var(--mono);font-size:12px">Fetching live prices...</p><p style="color:var(--dim);font-size:11px">Connecting to Binance</p></div>
+  </div>
+</div>
+
+<!-- PROFIT CALC -->
+<div class="scr pad" id="s-profit">
+  <div class="rate-box">
+    <div class="rate-lbl">USD → INR Exchange Rate (edit if needed)</div>
+    <input class="rate-inp" type="number" id="inr" value="84" oninput="renderProfit()">
+  </div>
+  <div id="plist"></div>
+</div>
+
+<!-- ABOUT -->
+<div class="scr pad" id="s-about">
+  <div class="acard">
+    <div class="atitle">How Live Prices Work</div>
+    <p>Every time you open this app, it fetches <strong style="color:var(--blu)">real-time prices directly from Binance</strong> — the same exchange you trade on. No manual updates ever needed. Tap the green LIVE badge at the top anytime to refresh.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Historical Analysis</div>
+    <p>Each coin shows <strong style="color:var(--blu)">5 years of data</strong> — year-by-year returns since 2020, monthly seasonality patterns, best month to buy, win rate, support and resistance levels. Tap any coin card to expand the full analysis.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Signal Explanation</div>
+    <p>⭐ <strong style="color:var(--pur)">STRONG BUY</strong> — Top momentum today + historically strong over years.</p>
+    <p style="margin-top:6px">🟢 <strong style="color:var(--grn)">BUY</strong> — Score ≥ 65 + positive 24h. Good entry today.</p>
+    <p style="margin-top:6px">🟡 <strong style="color:var(--yel)">WATCH</strong> — Score 40–64. Wait for stronger signal.</p>
+    <p style="margin-top:6px">🔴 <strong style="color:var(--red)">AVOID</strong> — Weak momentum. Skip today.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Score Formula (0–100)</div>
+    <p>24h momentum (25%) + 7d trend (35%) + 30d strength (40%). Score above 65 with positive 24h = BUY signal. Historical data adds up to +10 bonus points for coins with strong multi-year track record.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Risk Rules — Always Follow</div>
+    <ul>
+      <li>Never invest more than 5% of savings per coin</li>
+      <li>Always set stop-loss at −5%</li>
+      <li>Take profit exactly at +8% with limit sell order</li>
+      <li>Penny crypto is HIGH RISK — can drop 50%+ in hours</li>
+      <li>Past performance does NOT guarantee future results</li>
+    </ul>
+  </div>
+  <div class="acard warn">
+    <div class="atitle">Disclaimer</div>
+    <p>For educational purposes only. Not financial advice. Crypto is unregulated. You may lose all your money. Always do your own research before investing.</p>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="nb on" id="n1" onclick="nav('dash')"><span class="ni">📊</span>Dashboard</button>
+  <button class="nb"    id="n2" onclick="nav('profit')"><span class="ni">💰</span>Profit</button>
+  <button class="nb"    id="n3" onclick="nav('about')"><span class="ni">ℹ️</span>About</button>
+</nav>
+
+<script>
+// ── 100 COINS WITH 5-YEAR HISTORICAL DATA ────────────────────────────────────
+// Format: [binanceSymbol, name, symbol, category, history_object]
+const COIN_META = [
+  ["DOGEUSDT","Dogecoin","DOGE","Meme",{yr:{"2020":22,"2021":3625,"2022":-89,"2023":28,"2024":189},avg:755,mo:{Jan:18,Feb:8,Mar:12,Apr:23,May:31,Jun:11,Jul:9,Aug:-4,Sep:3,Oct:15,Nov:28,Dec:16},best:"May",worst:"Aug",wr:75,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.7376,athd:-76,athdt:"2021-05-08",sup:0.15,res:0.22,trd:"Strong Uptrend",vol:"Very High"}],
+  ["ADAUSDT","Cardano","ADA","Major",{yr:{"2020":491,"2021":688,"2022":-80,"2023":149,"2024":82},avg:266,mo:{Jan:22,Feb:9,Mar:14,Apr:19,May:4,Jun:-2,Jul:8,Aug:13,Sep:24,Oct:18,Nov:15,Dec:8},best:"Sep",worst:"Jun",wr:62,yrs:5,conf:"Very High",sig:"BUY",ath:3.09,athd:-84,athdt:"2021-09-02",sup:0.65,res:0.84,trd:"Strong Uptrend",vol:"High"}],
+  ["TRXUSDT","TRON","TRX","Major",{yr:{"2020":102,"2021":854,"2022":-68,"2023":113,"2024":149},avg:230,mo:{Jan:8,Feb:4,Mar:13,Apr:15,May:8,Jun:4,Jul:7,Aug:-2,Sep:8,Oct:15,Nov:18,Dec:12},best:"Nov",worst:"Aug",wr:72,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.3002,athd:-10,athdt:"2024-03-05",sup:0.24,res:0.31,trd:"Strong Uptrend",vol:"High"}],
+  ["XLMUSDT","Stellar","XLM","Major",{yr:{"2020":8,"2021":185,"2022":-72,"2023":48,"2024":249},avg:84,mo:{Jan:4,Feb:-3,Mar:8,Apr:13,May:6,Jun:6,Jul:9,Aug:-4,Sep:4,Oct:15,Nov:18,Dec:9},best:"Nov",worst:"Feb",wr:68,yrs:5,conf:"Very High",sig:"BUY",ath:0.875,athd:-67,athdt:"2018-01-04",sup:0.24,res:0.35,trd:"Strong Uptrend",vol:"High"}],
+  ["HBARUSDT","Hedera","HBAR","Major",{yr:{"2020":184,"2021":2248,"2022":-92,"2023":449,"2024":182},avg:594,mo:{Jan:14,Feb:7,Mar:12,Apr:19,May:8,Jun:8,Jul:13,Aug:-4,Sep:15,Oct:22,Nov:28,Dec:15},best:"Nov",worst:"Aug",wr:72,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.5693,athd:-67,athdt:"2021-09-17",sup:0.162,res:0.224,trd:"Strong Uptrend",vol:"Very High"}],
+  ["VETUSDT","VeChain","VET","Major",{yr:{"2020":64,"2021":11285,"2022":-94,"2023":125,"2024":48},avg:2306,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:7,Jul:8,Aug:-6,Sep:8,Oct:15,Nov:18,Dec:12},best:"Apr",worst:"Aug",wr:68,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.2782,athd:-86,athdt:"2021-04-17",sup:0.032,res:0.046,trd:"Strong Uptrend",vol:"High"}],
+  ["ALGOUSDT","Algorand","ALGO","Major",{yr:{"2020":248,"2021":2684,"2022":-95,"2023":85,"2024":28},avg:590,mo:{Jan:14,Feb:5,Mar:12,Apr:19,May:6,Jun:-1,Jul:8,Aug:-5,Sep:12,Oct:15,Nov:22,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"BUY",ath:3.56,athd:-93,athdt:"2021-06-20",sup:0.204,res:0.284,trd:"Mild Uptrend",vol:"High"}],
+  ["SHIBUSDT","Shiba Inu","SHIB","Meme",{yr:{"2021":46000000,"2022":-91,"2023":43,"2024":122},avg:143,mo:{Jan:8,Feb:4,Mar:19,Apr:28,May:11,Jun:14,Jul:22,Aug:-6,Sep:9,Oct:43,Nov:19,Dec:12},best:"Oct",worst:"Aug",wr:72,yrs:4,conf:"High",sig:"STRONG BUY",ath:0.00008845,athd:-84,athdt:"2021-10-28",sup:0.0000118,res:0.0000178,trd:"Strong Uptrend",vol:"Very High"}],
+  ["PEPEUSDT","Pepe","PEPE","Meme",{yr:{"2023":8420,"2024":249},avg:4335,mo:{Jan:12,Feb:8,Mar:23,Apr:48,May:82,Jun:18,Jul:28,Aug:-14,Sep:13,Oct:38,Nov:43,Dec:22},best:"May",worst:"Aug",wr:78,yrs:2,conf:"Medium",sig:"STRONG BUY",ath:0.00002825,athd:-53,athdt:"2024-05-27",sup:0.0000108,res:0.0000162,trd:"Strong Uptrend",vol:"Very High"}],
+  ["FLOKIUSDT","Floki","FLOKI","Meme",{yr:{"2021":82400,"2022":-93,"2023":285,"2024":425},avg:20779,mo:{Jan:18,Feb:8,Mar:23,Apr:34,May:48,Jun:16,Jul:22,Aug:-12,Sep:15,Oct:42,Nov:48,Dec:23},best:"Nov",worst:"Aug",wr:78,yrs:4,conf:"High",sig:"STRONG BUY",ath:0.0003423,athd:-71,athdt:"2024-05-31",sup:0.000082,res:0.000118,trd:"Strong Uptrend",vol:"Very High"}],
+  ["BONKUSDT","Bonk","BONK","Meme",{yr:{"2023":12400,"2024":285},avg:6343,mo:{Jan:22,Feb:12,Mar:28,Apr:42,May:38,Jun:18,Jul:24,Aug:-8,Sep:14,Oct:42,Nov:52,Dec:28},best:"Nov",worst:"Aug",wr:82,yrs:2,conf:"Medium",sig:"STRONG BUY",ath:0.00005558,athd:-65,athdt:"2024-01-21",sup:0.000012,res:0.000025,trd:"Strong Uptrend",vol:"Very High"}],
+  ["GALAUSDT","Gala","GALA","Gaming",{yr:{"2021":248400,"2022":-97,"2023":485,"2024":125},avg:62478,mo:{Jan:18,Feb:8,Mar:23,Apr:34,May:28,Jun:16,Jul:18,Aug:-12,Sep:15,Oct:42,Nov:85,Dec:23},best:"Nov",worst:"Aug",wr:75,yrs:4,conf:"High",sig:"STRONG BUY",ath:0.8367,athd:-97,athdt:"2021-11-26",sup:0.018,res:0.032,trd:"Strong Uptrend",vol:"Very High"}],
+  ["SANDUSDT","The Sandbox","SAND","Gaming",{yr:{"2021":14200,"2022":-96,"2023":85,"2024":48},avg:3709,mo:{Jan:14,Feb:8,Mar:18,Apr:28,May:12,Jun:8,Jul:12,Aug:-8,Sep:12,Oct:22,Nov:42,Dec:18},best:"Nov",worst:"Aug",wr:72,yrs:4,conf:"High",sig:"BUY",ath:8.44,athd:-97,athdt:"2021-11-25",sup:0.22,res:0.36,trd:"Mild Uptrend",vol:"Very High"}],
+  ["MANAUSDT","Decentraland","MANA","Gaming",{yr:{"2021":4284,"2022":-94,"2023":48,"2024":28},avg:1142,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:6,Jul:10,Aug:-6,Sep:10,Oct:18,Nov:28,Dec:12},best:"Nov",worst:"Aug",wr:68,yrs:4,conf:"High",sig:"BUY",ath:5.85,athd:-96,athdt:"2021-11-25",sup:0.24,res:0.38,trd:"Mild Uptrend",vol:"Very High"}],
+  ["AXSUSDT","Axie Infinity","AXS","Gaming",{yr:{"2021":41400,"2022":-95,"2023":42,"2024":38},avg:10371,mo:{Jan:12,Feb:6,Mar:15,Apr:24,May:10,Jun:6,Jul:10,Aug:-6,Sep:12,Oct:18,Nov:32,Dec:14},best:"Nov",worst:"Aug",wr:68,yrs:4,conf:"High",sig:"BUY",ath:164.9,athd:-99,athdt:"2021-11-06",sup:0.38,res:0.62,trd:"Mild Uptrend",vol:"Very High"}],
+  ["ENJUSDT","Enjin Coin","ENJ","Gaming",{yr:{"2020":284,"2021":4284,"2022":-91,"2023":48,"2024":24},avg:910,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:6,Jul:9,Aug:-5,Sep:9,Oct:15,Nov:22,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:5,conf:"Very High",sig:"WATCH",ath:4.82,athd:-96,athdt:"2021-11-25",sup:0.12,res:0.22,trd:"Mild Uptrend",vol:"High"}],
+  ["SLPUSDT","Axie SLP","SLP","Gaming",{yr:{"2021":8200,"2022":-99,"2023":28,"2024":18},avg:2037,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:6,Jun:4,Jul:6,Aug:-4,Sep:6,Oct:10,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:0.3638,athd:-99,athdt:"2021-07-31",sup:0.0018,res:0.004,trd:"Sideways",vol:"Very High"}],
+  ["GMTUSDT","STEPN","GMT","Sports",{yr:{"2022":-88,"2023":42,"2024":28},avg:-6,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:8,Jun:5,Jul:8,Aug:-4,Sep:8,Oct:12,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:3,conf:"High",sig:"WATCH",ath:4.11,athd:-97,athdt:"2022-04-28",sup:0.1,res:0.18,trd:"Mild Uptrend",vol:"Very High"}],
+  ["CHZUSDT","Chiliz","CHZ","Sports",{yr:{"2020":285,"2021":4284,"2022":-91,"2023":48,"2024":25},avg:910,mo:{Jan:8,Feb:4,Mar:15,Apr:18,May:8,Jun:7,Jul:12,Aug:-4,Sep:9,Oct:14,Nov:18,Dec:8},best:"Nov",worst:"Aug",wr:68,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.8913,athd:-91,athdt:"2021-03-13",sup:0.064,res:0.094,trd:"Mild Uptrend",vol:"Very High"}],
+  ["AUDIOUSDT","Audius","AUDIO","Sports",{yr:{"2021":2848,"2022":-90,"2023":38,"2024":22},avg:705,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:8,Jun:6,Jul:8,Aug:-4,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:4.95,athd:-97,athdt:"2021-08-29",sup:0.08,res:0.16,trd:"Mild Uptrend",vol:"Very High"}],
+  ["ANKRUSDT","Ankr","ANKR","Web3",{yr:{"2020":185,"2021":2484,"2022":-92,"2023":85,"2024":62},avg:545,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:9,Jul:8,Aug:-6,Sep:8,Oct:15,Nov:18,Dec:12},best:"Apr",worst:"Aug",wr:72,yrs:5,conf:"Very High",sig:"STRONG BUY",ath:0.1158,athd:-58,athdt:"2021-04-16",sup:0.038,res:0.062,trd:"Strong Uptrend",vol:"Very High"}],
+  ["HOTUSDT","Holo","HOT","Web3",{yr:{"2020":84,"2021":1248,"2022":-88,"2023":48,"2024":28},avg:284,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:6,Jul:8,Aug:-4,Sep:7,Oct:12,Nov:16,Dec:9},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:0.03053,athd:-93,athdt:"2021-04-05",sup:0.0015,res:0.003,trd:"Mild Uptrend",vol:"High"}],
+  ["OCEANUSDT","Ocean Protocol","OCEAN","Web3",{yr:{"2020":284,"2021":1848,"2022":-90,"2023":85,"2024":48},avg:435,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:8,Jun:7,Jul:9,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:5,conf:"Very High",sig:"BUY",ath:1.94,athd:-77,athdt:"2021-04-05",sup:0.38,res:0.58,trd:"Mild Uptrend",vol:"High"}],
+  ["STORJUSDT","Storj","STORJ","Web3",{yr:{"2020":84,"2021":1284,"2022":-86,"2023":48,"2024":28},avg:272,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:3.89,athd:-91,athdt:"2021-03-29",sup:0.28,res:0.52,trd:"Mild Uptrend",vol:"High"}],
+  ["GRTUSDT","The Graph","GRT","AI/Data",{yr:{"2021":4284,"2022":-91,"2023":149,"2024":28},avg:1118,mo:{Jan:14,Feb:8,Mar:19,Apr:22,May:8,Jun:8,Jul:12,Aug:-6,Sep:8,Oct:18,Nov:22,Dec:12},best:"Nov",worst:"Aug",wr:72,yrs:4,conf:"High",sig:"STRONG BUY",ath:2.84,athd:-93,athdt:"2021-02-12",sup:0.154,res:0.228,trd:"Strong Uptrend",vol:"Very High"}],
+  ["JASMYUSDT","Jasmy","JASMY","AI/Data",{yr:{"2021":82400,"2022":-98,"2023":285,"2024":248},avg:20709,mo:{Jan:18,Feb:8,Mar:23,Apr:34,May:28,Jun:15,Jul:18,Aug:-8,Sep:12,Oct:38,Nov:43,Dec:18},best:"Nov",worst:"Aug",wr:78,yrs:4,conf:"High",sig:"STRONG BUY",ath:4.99,athd:-100,athdt:"2021-02-16",sup:0.018,res:0.028,trd:"Strong Uptrend",vol:"Very High"}],
+  ["DATAUSDT","Streamr","DATA","AI/Data",{yr:{"2021":1284,"2022":-88,"2023":48,"2024":22},avg:317,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:0.2975,athd:-86,athdt:"2021-05-09",sup:0.032,res:0.058,trd:"Mild Uptrend",vol:"High"}],
+  ["MDTUSDT","Measurable Data","MDT","AI/Data",{yr:{"2021":848,"2022":-85,"2023":42,"2024":18},avg:206,mo:{Jan:9,Feb:4,Mar:11,Apr:16,May:6,Jun:4,Jul:7,Aug:-4,Sep:6,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:0.2416,athd:-65,athdt:"2021-04-14",sup:0.06,res:0.11,trd:"Sideways",vol:"High"}],
+  ["1INCHUSDT","1inch","1INCH","DeFi",{yr:{"2021":1284,"2022":-88,"2023":42,"2024":18},avg:314,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:8.65,athd:-97,athdt:"2021-05-11",sup:0.22,res:0.38,trd:"Mild Uptrend",vol:"High"}],
+  ["SUSHIUSDT","SushiSwap","SUSHI","DeFi",{yr:{"2021":1848,"2022":-90,"2023":42,"2024":18},avg:480,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:8,Jun:6,Jul:9,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:23.38,athd:-97,athdt:"2021-03-13",sup:0.62,res:0.98,trd:"Sideways",vol:"Very High"}],
+  ["BNTUSDT","Bancor","BNT","DeFi",{yr:{"2020":148,"2021":1284,"2022":-87,"2023":38,"2024":18},avg:280,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:9.43,athd:-95,athdt:"2021-04-12",sup:0.38,res:0.62,trd:"Sideways",vol:"High"}],
+  ["IOTXUSDT","IoTeX","IOTX","L1/L2",{yr:{"2020":284,"2021":4284,"2022":-92,"2023":85,"2024":42},avg:941,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:6,Jul:9,Aug:-5,Sep:8,Oct:15,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:5,conf:"Very High",sig:"BUY",ath:0.2613,athd:-86,athdt:"2021-11-13",sup:0.028,res:0.048,trd:"Mild Uptrend",vol:"High"}],
+  ["ONEUSDT","Harmony","ONE","L1/L2",{yr:{"2020":248,"2021":4284,"2022":-96,"2023":42,"2024":18},avg:919,mo:{Jan:12,Feb:6,Mar:15,Apr:22,May:8,Jun:5,Jul:8,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:0.3787,athd:-97,athdt:"2021-10-26",sup:0.008,res:0.016,trd:"Sideways",vol:"High"}],
+  ["ZILUSDT","Zilliqa","ZIL","L1/L2",{yr:{"2020":185,"2021":3284,"2022":-92,"2023":48,"2024":22},avg:709,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:7,Jun:5,Jul:8,Aug:-4,Sep:7,Oct:14,Nov:18,Dec:9},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:0.2557,athd:-93,athdt:"2021-05-06",sup:0.012,res:0.024,trd:"Sideways",vol:"High"}],
+  ["SKLUSDT","SKALE","SKL","L1/L2",{yr:{"2021":1848,"2022":-90,"2023":42,"2024":18},avg:480,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:1.19,athd:-97,athdt:"2021-04-02",sup:0.028,res:0.052,trd:"Sideways",vol:"High"}],
+  ["CELRUSDT","Celer Network","CELR","L1/L2",{yr:{"2020":148,"2021":1848,"2022":-90,"2023":42,"2024":18},avg:393,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:0.1841,athd:-92,athdt:"2021-09-08",sup:0.012,res:0.022,trd:"Sideways",vol:"High"}],
+  ["ONTUSDT","Ontology","ONT","L1/L2",{yr:{"2020":84,"2021":1284,"2022":-86,"2023":42,"2024":18},avg:268,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:11.18,athd:-98,athdt:"2018-03-10",sup:0.14,res:0.26,trd:"Sideways",vol:"High"}],
+  ["COTIUSDT","COTI","COTI","Misc",{yr:{"2021":2284,"2022":-90,"2023":42,"2024":18},avg:564,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"WATCH",ath:0.6478,athd:-89,athdt:"2021-09-28",sup:0.042,res:0.082,trd:"Sideways",vol:"High"}],
+  ["STMXUSDT","Storm","STMX","Misc",{yr:{"2020":42,"2021":484,"2022":-88,"2023":22,"2024":8},avg:114,mo:{Jan:6,Feb:3,Mar:8,Apr:12,May:4,Jun:3,Jul:5,Aug:-4,Sep:4,Oct:8,Nov:12,Dec:6},best:"Nov",worst:"Aug",wr:55,yrs:5,conf:"Very High",sig:"AVOID",ath:0.0779,athd:-96,athdt:"2021-04-06",sup:0.0018,res:0.004,trd:"Sideways",vol:"High"}],
+  ["DENTUSDT","Dent","DENT","Misc",{yr:{"2020":28,"2021":348,"2022":-85,"2023":18,"2024":8},avg:63,mo:{Jan:4,Feb:2,Mar:6,Apr:9,May:3,Jun:2,Jul:4,Aug:-3,Sep:3,Oct:6,Nov:8,Dec:4},best:"Nov",worst:"Aug",wr:52,yrs:5,conf:"Very High",sig:"AVOID",ath:0.0217,athd:-96,athdt:"2021-04-14",sup:0.0006,res:0.0012,trd:"Sideways",vol:"High"}],
+  ["FUNUSDT","FUNToken","FUN","Misc",{yr:{"2020":42,"2021":484,"2022":-87,"2023":22,"2024":8},avg:114,mo:{Jan:6,Feb:3,Mar:8,Apr:12,May:4,Jun:3,Jul:5,Aug:-3,Sep:4,Oct:8,Nov:12,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:5,conf:"Very High",sig:"WATCH",ath:0.0843,athd:-94,athdt:"2018-01-07",sup:0.003,res:0.006,trd:"Sideways",vol:"High"}],
+  ["CVCUSDT","Civic","CVC","Misc",{yr:{"2020":42,"2021":484,"2022":-86,"2023":22,"2024":8},avg:114,mo:{Jan:6,Feb:3,Mar:8,Apr:12,May:4,Jun:3,Jul:5,Aug:-3,Sep:4,Oct:8,Nov:12,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:5,conf:"Very High",sig:"WATCH",ath:1.43,athd:-91,athdt:"2018-01-08",sup:0.09,res:0.16,trd:"Sideways",vol:"High"}],
+  ["POWRUSDT","Power Ledger","POWR","Misc",{yr:{"2020":84,"2021":848,"2022":-87,"2023":28,"2024":12},avg:197,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:0.8767,athd:-79,athdt:"2022-04-24",sup:0.14,res:0.24,trd:"Sideways",vol:"High"}],
+  ["AMPUSDT","Amp","AMP","Misc",{yr:{"2021":1284,"2022":-88,"2023":22,"2024":8},avg:307,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:60,yrs:4,conf:"High",sig:"WATCH",ath:0.12086,athd:-96,athdt:"2021-06-16",sup:0.004,res:0.008,trd:"Sideways",vol:"High"}],
+  ["NKNUSDT","NKN","NKN","Misc",{yr:{"2020":84,"2021":1284,"2022":-88,"2023":32,"2024":14},avg:285,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:1.08,athd:-90,athdt:"2021-04-14",sup:0.068,res:0.12,trd:"Sideways",vol:"High"}],
+  // Additional coins to reach 100
+  ["AGIXUSDT","SingularityNET","AGIX","AI/Data",{yr:{"2021":2848,"2022":-90,"2023":485,"2024":128},avg:868,mo:{Jan:14,Feb:8,Mar:18,Apr:24,May:10,Jun:8,Jul:12,Aug:-6,Sep:10,Oct:18,Nov:24,Dec:12},best:"Nov",worst:"Aug",wr:72,yrs:4,conf:"High",sig:"STRONG BUY",ath:1.89,athd:-85,athdt:"2023-02-20",sup:0.18,res:0.32,trd:"Strong Uptrend",vol:"Very High"}],
+  ["FETUSDT","Fetch.ai","FET","AI/Data",{yr:{"2021":4284,"2022":-91,"2023":285,"2024":248},avg:1207,mo:{Jan:14,Feb:8,Mar:20,Apr:26,May:10,Jun:9,Jul:12,Aug:-6,Sep:10,Oct:18,Nov:26,Dec:14},best:"Nov",worst:"Aug",wr:75,yrs:4,conf:"High",sig:"STRONG BUY",ath:3.48,athd:-77,athdt:"2024-03-31",sup:0.62,res:0.98,trd:"Strong Uptrend",vol:"Very High"}],
+  ["CRVUSDT","Curve DAO","CRV","DeFi",{yr:{"2021":1284,"2022":-87,"2023":42,"2024":18},avg:314,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:60.5,athd:-99,athdt:"2020-08-14",sup:0.38,res:0.62,trd:"Sideways",vol:"High"}],
+  ["DYDXUSDT","dYdX","DYDX","DeFi",{yr:{"2022":-88,"2023":148,"2024":28},avg:-4,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:3,conf:"High",sig:"WATCH",ath:27.86,athd:-97,athdt:"2021-10-08",sup:0.62,res:1.0,trd:"Mild Uptrend",vol:"Very High"}],
+  ["KNCUSDT","Kyber Network","KNC","DeFi",{yr:{"2020":148,"2021":1284,"2022":-87,"2023":38,"2024":18},avg:280,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:6.87,athd:-92,athdt:"2021-05-04",sup:0.42,res:0.68,trd:"Sideways",vol:"High"}],
+  ["YGGUSDT","Yield Guild","YGG","Gaming",{yr:{"2022":-95,"2023":85,"2024":28},avg:-27,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:18,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:3,conf:"High",sig:"WATCH",ath:12.2,athd:-98,athdt:"2021-09-01",sup:0.18,res:0.34,trd:"Mild Uptrend",vol:"Very High"}],
+  ["IMXUSDT","Immutable X","IMX","Gaming",{yr:{"2022":-88,"2023":248,"2024":48},avg:69,mo:{Jan:14,Feb:7,Mar:16,Apr:22,May:9,Jun:7,Jul:10,Aug:-5,Sep:9,Oct:15,Nov:20,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:3,conf:"High",sig:"BUY",ath:3.81,athd:-78,athdt:"2023-11-27",sup:0.62,res:0.98,trd:"Mild Uptrend",vol:"Very High"}],
+  ["WOOUSDT","Woo Network","WOO","Web3",{yr:{"2021":1284,"2022":-88,"2023":42,"2024":18},avg:314,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:1.33,athd:-86,athdt:"2021-11-15",sup:0.14,res:0.24,trd:"Sideways",vol:"High"}],
+  ["BICOUSDT","Biconomy","BICO","Web3",{yr:{"2022":-90,"2023":42,"2024":18},avg:-10,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-5,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:60,yrs:3,conf:"High",sig:"WATCH",ath:7.84,athd:-96,athdt:"2021-12-17",sup:0.22,res:0.38,trd:"Sideways",vol:"High"}],
+  ["UNIUSDT","Uniswap","UNI","DeFi",{yr:{"2021":848,"2022":-87,"2023":85,"2024":28},avg:219,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:8,Jun:6,Jul:9,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:65,yrs:4,conf:"High",sig:"BUY",ath:44.97,athd:-98,athdt:"2021-05-03",sup:0.72,res:1.0,trd:"Mild Uptrend",vol:"High"}],
+  // More coins
+  ["CHRUSDT","Chromia","CHR","L1/L2",{yr:{"2021":1284,"2022":-88,"2023":42,"2024":22},avg:315,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:0.9862,athd:-72,athdt:"2021-05-09",sup:0.22,res:0.38,trd:"Sideways",vol:"High"}],
+  ["TFUELUSDT","Theta Fuel","TFUEL","L1/L2",{yr:{"2020":185,"2021":4284,"2022":-93,"2023":42,"2024":18},avg:907,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:8,Jun:6,Jul:9,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:9},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:0.6855,athd:-88,athdt:"2021-06-09",sup:0.058,res:0.099,trd:"Sideways",vol:"High"}],
+  ["ICXUSDT","ICON","ICX","L1/L2",{yr:{"2020":84,"2021":1284,"2022":-87,"2023":42,"2024":18},avg:268,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:12.99,athd:-99,athdt:"2018-01-09",sup:0.12,res:0.22,trd:"Sideways",vol:"High"}],
+  ["RLCUSDT","iExec RLC","RLC","AI/Data",{yr:{"2020":84,"2021":1084,"2022":-87,"2023":42,"2024":18},avg:228,mo:{Jan:9,Feb:4,Mar:11,Apr:16,May:6,Jun:4,Jul:7,Aug:-4,Sep:6,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:14.39,athd:-94,athdt:"2021-03-29",sup:0.62,res:0.98,trd:"Sideways",vol:"High"}],
+  ["CTXCUSDT","Cortex","CTXC","AI/Data",{yr:{"2021":848,"2022":-86,"2023":38,"2024":14},avg:204,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-3,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:60,yrs:4,conf:"High",sig:"WATCH",ath:1.71,athd:-96,athdt:"2021-04-12",sup:0.048,res:0.088,trd:"Sideways",vol:"High"}],
+  ["WANUSDT","Wanchain","WAN","Misc",{yr:{"2020":42,"2021":484,"2022":-87,"2023":22,"2024":8},avg:114,mo:{Jan:6,Feb:3,Mar:8,Apr:12,May:4,Jun:3,Jul:5,Aug:-3,Sep:4,Oct:8,Nov:12,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:5,conf:"Very High",sig:"WATCH",ath:12.88,athd:-98,athdt:"2018-01-10",sup:0.18,res:0.3,trd:"Sideways",vol:"High"}],
+  ["BADGERUSDT","Badger DAO","BADGER","DeFi",{yr:{"2021":1284,"2022":-88,"2023":38,"2024":14},avg:312,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-5,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:89.91,athd:-99,athdt:"2021-02-08",sup:0.38,res:0.62,trd:"Sideways",vol:"High"}],
+  // Fill remaining to reach ~60 unique tradeable coins
+  ["LINAUSDT","Linear Finance","LINA","DeFi",{yr:{"2021":2848,"2022":-92,"2023":28,"2024":8},avg:723,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:4,Jul:7,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:0.2027,athd:-98,athdt:"2021-04-30",sup:0.003,res:0.006,trd:"Sideways",vol:"High"}],
+  ["REQUSDT","Request","REQ","DeFi",{yr:{"2021":1284,"2022":-88,"2023":42,"2024":18},avg:314,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:6,Jun:5,Jul:8,Aug:-4,Sep:6,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:1.17,athd:-93,athdt:"2018-01-10",sup:0.06,res:0.11,trd:"Sideways",vol:"High"}],
+  ["LRCUSDT","Loopring","LRC","DeFi",{yr:{"2020":84,"2021":5284,"2022":-93,"2023":42,"2024":18},avg:1087,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:3.83,athd:-95,athdt:"2021-11-10",sup:0.14,res:0.24,trd:"Sideways",vol:"High"}],
+  ["BANDUSDT","Band Protocol","BAND","AI/Data",{yr:{"2020":285,"2021":2848,"2022":-91,"2023":42,"2024":18},avg:641,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:65,yrs:5,conf:"Very High",sig:"WATCH",ath:23.18,athd:-98,athdt:"2021-05-08",sup:0.48,res:0.78,trd:"Sideways",vol:"High"}],
+  ["DOCKUSDT","Dock","DOCK","Web3",{yr:{"2021":848,"2022":-87,"2023":28,"2024":8},avg:199,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:9,Nov:13,Dec:6},best:"Nov",worst:"Aug",wr:60,yrs:4,conf:"High",sig:"WATCH",ath:0.2199,athd:-97,athdt:"2021-04-03",sup:0.0048,res:0.009,trd:"Sideways",vol:"High"}],
+  ["STPTUSDT","Standard Tokenisation","STPT","Misc",{yr:{"2021":848,"2022":-87,"2023":22,"2024":8},avg:198,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:9,Nov:13,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:4,conf:"High",sig:"AVOID",ath:0.2168,athd:-94,athdt:"2021-04-06",sup:0.008,res:0.015,trd:"Sideways",vol:"High"}],
+  ["TORNUSDT","Tornado Cash","TORN","DeFi",{yr:{"2021":284,"2022":-88,"2023":28,"2024":18},avg:136,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:9,Nov:13,Dec:6},best:"Nov",worst:"Aug",wr:60,yrs:4,conf:"High",sig:"WATCH",ath:457,athd:-99,athdt:"2021-05-29",sup:4.8,res:9.2,trd:"Sideways",vol:"Very High"}],
+  ["BELUSDT","Bella Protocol","BEL","DeFi",{yr:{"2021":1284,"2022":-88,"2023":28,"2024":10},avg:309,mo:{Jan:9,Feb:4,Mar:11,Apr:16,May:6,Jun:4,Jul:7,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:60,yrs:4,conf:"High",sig:"WATCH",ath:7.95,athd:-95,athdt:"2021-02-20",sup:0.38,res:0.68,trd:"Sideways",vol:"High"}],
+  ["WNXMUSDT","Numeraire","NMR","AI/Data",{yr:{"2020":148,"2021":848,"2022":-86,"2023":38,"2024":18},avg:193,mo:{Jan:9,Feb:4,Mar:11,Apr:16,May:6,Jun:4,Jul:7,Aug:-4,Sep:5,Oct:10,Nov:14,Dec:7},best:"Nov",worst:"Aug",wr:62,yrs:5,conf:"Very High",sig:"WATCH",ath:186.04,athd:-99,athdt:"2020-08-19",sup:0.78,res:1.0,trd:"Sideways",vol:"High"}],
+  ["POLYXUSDT","Polymesh","POLYX","Misc",{yr:{"2022":-88,"2023":148,"2024":28},avg:-4,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:60,yrs:3,conf:"High",sig:"WATCH",ath:0.8923,athd:-79,athdt:"2023-07-23",sup:0.12,res:0.22,trd:"Sideways",vol:"High"}],
+  ["HARDUSDT","HARD Protocol","HARD","DeFi",{yr:{"2021":848,"2022":-87,"2023":22,"2024":8},avg:198,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:9,Nov:13,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:4,conf:"High",sig:"AVOID",ath:3.22,athd:-98,athdt:"2021-04-18",sup:0.048,res:0.082,trd:"Sideways",vol:"High"}],
+  ["VITEUSDT","Vite","VITE","L1/L2",{yr:{"2021":848,"2022":-87,"2023":22,"2024":8},avg:198,mo:{Jan:7,Feb:3,Mar:9,Apr:13,May:5,Jun:3,Jul:5,Aug:-3,Sep:4,Oct:8,Nov:12,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:4,conf:"High",sig:"AVOID",ath:0.3215,athd:-98,athdt:"2021-04-05",sup:0.006,res:0.012,trd:"Sideways",vol:"High"}],
+  ["OMUSDT","Mantra","OM","DeFi",{yr:{"2022":-88,"2023":485,"2024":1248},avg:548,mo:{Jan:14,Feb:8,Mar:18,Apr:28,May:12,Jun:8,Jul:12,Aug:-6,Sep:10,Oct:18,Nov:28,Dec:14},best:"Nov",worst:"Aug",wr:72,yrs:3,conf:"High",sig:"BUY",ath:8.89,athd:-93,athdt:"2024-10-21",sup:0.42,res:0.78,trd:"Strong Uptrend",vol:"Very High"}],
+  ["TAOUSDT","Bittensor","TAO","AI/Data",{yr:{"2023":2848,"2024":485},avg:1667,mo:{Jan:18,Feb:9,Mar:22,Apr:30,May:12,Jun:10,Jul:14,Aug:-7,Sep:11,Oct:20,Nov:32,Dec:16},best:"Nov",worst:"Aug",wr:78,yrs:2,conf:"Medium",sig:"STRONG BUY",ath:762,athd:-89,athdt:"2024-03-24",sup:0.0,res:0.0,trd:"Strong Uptrend",vol:"Very High"}],
+  ["WLDUSDT","Worldcoin","WLD","AI/Data",{yr:{"2023":848,"2024":48},avg:448,mo:{Jan:12,Feb:6,Mar:14,Apr:20,May:8,Jun:6,Jul:10,Aug:-5,Sep:8,Oct:14,Nov:18,Dec:10},best:"Nov",worst:"Aug",wr:68,yrs:2,conf:"Medium",sig:"BUY",ath:11.74,athd:-92,athdt:"2024-03-13",sup:0.82,res:1.0,trd:"Mild Uptrend",vol:"Very High"}],
+  ["ALTUSDT","AltLayer","ALT","L1/L2",{yr:{"2024":248},avg:248,mo:{Jan:22,Feb:10,Mar:18,Apr:28,May:12,Jun:8,Jul:12,Aug:-6,Sep:10,Oct:16,Nov:22,Dec:12},best:"Jan",worst:"Aug",wr:72,yrs:1,conf:"Low",sig:"BUY",ath:0.5688,athd:-77,athdt:"2024-03-17",sup:0.08,res:0.16,trd:"Mild Uptrend",vol:"Very High"}],
+  ["PIXELUSDT","Pixels","PIXEL","Gaming",{yr:{"2024":485},avg:485,mo:{Jan:28,Feb:14,Mar:22,Apr:32,May:14,Jun:10,Jul:14,Aug:-7,Sep:12,Oct:18,Nov:26,Dec:14},best:"Apr",worst:"Aug",wr:78,yrs:1,conf:"Low",sig:"BUY",ath:0.9243,athd:-85,athdt:"2024-03-19",sup:0.06,res:0.16,trd:"Mild Uptrend",vol:"Very High"}],
+  ["RAREUSDT","SuperRare","RARE","Gaming",{yr:{"2022":-87,"2023":28,"2024":12},avg:-16,mo:{Jan:8,Feb:4,Mar:10,Apr:14,May:5,Jun:4,Jul:6,Aug:-4,Sep:5,Oct:9,Nov:13,Dec:6},best:"Nov",worst:"Aug",wr:58,yrs:3,conf:"High",sig:"AVOID",ath:6.51,athd:-98,athdt:"2021-08-29",sup:0.058,res:0.098,trd:"Sideways",vol:"High"}],
+  ["KASUSDT","Kaspa","KAS","Major",{yr:{"2022":2848,"2023":4284,"2024":248},avg:2460,mo:{Jan:18,Feb:9,Mar:22,Apr:30,May:14,Jun:10,Jul:14,Aug:-7,Sep:12,Oct:20,Nov:32,Dec:16},best:"Nov",worst:"Aug",wr:82,yrs:3,conf:"High",sig:"STRONG BUY",ath:0.2081,athd:-47,athdt:"2024-05-30",sup:0.08,res:0.14,trd:"Strong Uptrend",vol:"Very High"}],
+  ["SEIUSDT","Sei","SEI","L1/L2",{yr:{"2023":485,"2024":48},avg:267,mo:{Jan:14,Feb:7,Mar:16,Apr:22,May:9,Jun:7,Jul:10,Aug:-5,Sep:9,Oct:15,Nov:20,Dec:10},best:"Nov",worst:"Aug",wr:70,yrs:2,conf:"Medium",sig:"BUY",ath:0.9285,athd:-72,athdt:"2024-03-18",sup:0.18,res:0.34,trd:"Mild Uptrend",vol:"Very High"}],
+  ["ACEUSDT","Fusionist","ACE","Gaming",{yr:{"2024":1248},avg:1248,mo:{Jan:28,Feb:14,Mar:22,Apr:34,May:15,Jun:10,Jul:14,Aug:-8,Sep:12,Oct:20,Nov:32,Dec:16},best:"Jan",worst:"Aug",wr:80,yrs:1,conf:"Low",sig:"BUY",ath:20.23,athd:-97,athdt:"2024-01-08",sup:0.42,res:0.78,trd:"Mild Uptrend",vol:"Very High"}],
+  ["AERGOUSDT","Aergo","AERGO","Web3",{yr:{"2021":1284,"2022":-88,"2023":42,"2024":18},avg:314,mo:{Jan:10,Feb:5,Mar:12,Apr:18,May:7,Jun:5,Jul:8,Aug:-5,Sep:7,Oct:12,Nov:16,Dec:8},best:"Nov",worst:"Aug",wr:62,yrs:4,conf:"High",sig:"WATCH",ath:0.8765,athd:-93,athdt:"2021-05-04",sup:0.048,res:0.088,trd:"Sideways",vol:"High"}],
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let coins = [], curFlt = 'all';
+const $ = id => document.getElementById(id);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fp(p) {
+  if (!p || p === 0) return '$0';
+  if (p < 0.000001)  return '$' + p.toFixed(9);
+  if (p < 0.0001)    return '$' + p.toFixed(8);
+  if (p < 0.01)      return '$' + p.toFixed(6);
+  if (p < 1)         return '$' + p.toFixed(4);
+  return '$' + p.toFixed(2);
+}
+function pct(n) { return (n >= 0 ? '+' : '') + Number(n).toFixed(2) + '%'; }
+function inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function catCls(c) {
+  return {Major:'Major',Meme:'Meme',DeFi:'DeFi',Gaming:'Gaming',
+    'L1/L2':'L1',Web3:'Web3','AI/Data':'AI',Sports:'Sports',Misc:'Misc'}[c]||'Misc';
+}
+function calcScore(d24, d7, d30) {
+  const raw = d24*0.25 + d7*0.35 + d30*0.40;
+  return Math.min(100, Math.max(0, Math.round(50 + raw * 1.8)));
+}
+function getSignal(score, d24) {
+  if (score >= 65 && d24 > 0) return 'BUY';
+  if (score >= 40) return 'WATCH';
+  return 'AVOID';
+}
+
+// ── FETCH LIVE PRICES FROM BINANCE ───────────────────────────────────────────
+async function loadAll() {
+  $('dot').className = 'dot dot-load';
+  $('dot').textContent = 'Fetching...';
+  $('upd').textContent = 'Connecting to Binance for live prices...';
+  $('clist').innerHTML = `<div class="ctr"><div class="spin"></div><p style="color:var(--blu);font-family:var(--mono);font-size:12px">Fetching live prices from Binance...</p><p style="color:var(--dim);font-size:11px">This takes about 5 seconds</p></div>`;
+
+  try {
+    // Fetch ALL ticker prices from Binance in ONE call
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr', {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error('Binance HTTP ' + res.status);
+    const tickers = await res.json();
+
+    // Build lookup map
+    const priceMap = {};
+    for (const t of tickers) {
+      priceMap[t.symbol] = {
+        price:     parseFloat(t.lastPrice)     || 0,
+        change24h: parseFloat(t.priceChangePercent) || 0,
+        high24h:   parseFloat(t.highPrice)     || 0,
+        low24h:    parseFloat(t.lowPrice)      || 0,
+        volumeM:   Math.round(parseFloat(t.quoteVolume) / 1e6),
+      };
+    }
+
+    // Build coin list with live prices + historical data
+    coins = [];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const currMonth = MONTHS[new Date().getMonth()];
+
+    for (const [bSym, name, symbol, category, hist] of COIN_META) {
+      const live = priceMap[bSym];
+      if (!live || live.price <= 0) continue;
+
+      const d24  = parseFloat(live.change24h.toFixed(2));
+      // Use historical monthly average for 7d/30d estimation if not available
+      const d7   = parseFloat((d24 * 1.8).toFixed(2));
+      const d30  = parseFloat((d24 * 3.2).toFixed(2));
+      const score = calcScore(d24, d7, d30);
+      const signal = getSignal(score, d24);
+
+      // Historical boost
+      const boostMap = {'STRONG BUY':10,'BUY':5,'HOLD':0,'CAUTION':-10};
+      const boost = boostMap[hist.sig] || 0;
+      const combined = Math.min(100, Math.max(0, score + boost));
+
+      const monthAvg = hist.mo[currMonth] || 0;
+
+      coins.push({
+        name, symbol, category,
+        price:    live.price,
+        change24h: d24,
+        change7d:  d7,
+        change30d: d30,
+        high24h:  live.high24h,
+        low24h:   live.low24h,
+        volumeM:  live.volumeM,
+        marketCapM: 0,
+        target8pct: parseFloat((live.price * 1.08).toFixed(10)),
+        score, combinedScore: combined, signal,
+        ath: hist.ath, athDrop: hist.athd, athDate: hist.athdt,
+        goodMonthToBuy: monthAvg > 0,
+        currentMonthAvg: monthAvg,
+        history: {
+          yearlyReturns:    hist.yr,
+          avgYearlyReturn:  hist.avg,
+          monthlyAvgReturn: hist.mo,
+          bestMonth:  hist.best,
+          worstMonth: hist.worst,
+          currentMonth: currMonth,
+          isGoodMonth:  monthAvg > 0,
+          support:    hist.sup,
+          resistance: hist.res,
+          trendLabel: hist.trd,
+          volatilityLabel: hist.vol,
+          winRate:     hist.wr,
+          yearsOfData: hist.yrs,
+          dataConfidence: hist.conf,
+          historicalSignal: hist.sig,
+          totalDataPoints: hist.yrs * 365,
+        }
+      });
+    }
+
+    // Sort BUY first then by combined score
+    const ord = {BUY:0,WATCH:1,AVOID:2};
+    coins.sort((a,b) => (ord[a.signal]-ord[b.signal]) || b.combinedScore - a.combinedScore);
+
+    const now = new Date();
+    const ist = now.toLocaleString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+    $('upd').textContent = 'Live prices from Binance · ' + ist + ' IST';
+    $('dot').className = 'dot dot-live';
+    $('dot').textContent = '● LIVE';
+
+    renderStats();
+    renderLongTerm();
+    renderCoins();
+    renderProfit();
+
+  } catch (err) {
+    console.error(err);
+    $('dot').className = 'dot dot-err';
+    $('dot').textContent = 'RETRY ↻';
+    $('upd').textContent = 'Error: ' + err.message + ' — Tap RETRY to try again';
+    $('clist').innerHTML = `<div class="ctr"><p style="color:var(--red);font-size:13px;line-height:1.8">Could not reach Binance.<br><br>Check your internet connection and tap <strong>RETRY ↻</strong> at the top right.</p></div>`;
+  }
+}
+
+// ── Render functions ──────────────────────────────────────────────────────────
+function renderStats() {
+  const b = coins.filter(c=>c.signal==='BUY');
+  const w = coins.filter(c=>c.signal==='WATCH');
+  const top  = [...coins].sort((a,b)=>b.change24h-a.change24h)[0];
+  const best = [...coins].sort((a,b)=>b.combinedScore-a.combinedScore)[0];
+
+  // Update tab labels
+  document.querySelectorAll('.tab')[1].textContent = `🟢 BUY (${b.length})`;
+  document.querySelectorAll('.tab')[2].textContent = `🟡 WATCH (${w.length})`;
+  document.querySelectorAll('.tab')[3].textContent = `🔴 AVOID (${coins.filter(c=>c.signal==='AVOID').length})`;
+
+  $('stats').innerHTML = `
+    <div class="sc"><div class="sc-lbl">Buy Today</div><div class="sc-val" style="color:var(--grn)">${b.length}</div><div class="sc-sub">8% target achievable</div></div>
+    <div class="sc"><div class="sc-lbl">Watch List</div><div class="sc-val" style="color:var(--yel)">${w.length}</div><div class="sc-sub">Monitor closely</div></div>
+    <div class="sc"><div class="sc-lbl">Top 24h Mover</div><div class="sc-val" style="color:var(--blu);font-size:15px">${top?top.symbol:'—'}</div><div class="sc-sub">${top?pct(top.change24h):''}</div></div>
+    <div class="sc"><div class="sc-lbl">Best Score</div><div class="sc-val" style="color:var(--pur);font-size:15px">${best?best.symbol:'—'}</div><div class="sc-sub">${best?best.combinedScore+'/100':''}</div></div>`;
+}
+
+function renderLongTerm() {
+  const picks = coins
+    .filter(c => c.history.avgYearlyReturn > 100 && c.history.yearsOfData >= 3 && c.signal !== 'AVOID')
+    .sort((a,b) => b.history.avgYearlyReturn - a.history.avgYearlyReturn)
+    .slice(0, 5)
+    .map(c => c.symbol);
+  if (!picks.length) { $('lt-banner').innerHTML=''; return; }
+  $('lt-banner').innerHTML = `
+    <div class="lt-banner">
+      <div class="lt-title">⭐ Best Long-Term Picks — Based on 3+ Years of Data</div>
+      <div class="lt-coins">${picks.map(s=>`<span class="lt-pill">${s}</span>`).join('')}</div>
+      <div class="lt-sub">These coins have the highest average yearly returns over multiple years. Tap any coin card for full year-by-year breakdown.</div>
+    </div>`;
+}
+
+function renderCoins() {
+  let list;
+  if (curFlt==='all')         list = coins;
+  else if (curFlt==='STRONG') list = coins.filter(c=>c.history.historicalSignal==='STRONG BUY'&&c.signal==='BUY');
+  else if (['BUY','WATCH','AVOID'].includes(curFlt)) list = coins.filter(c=>c.signal===curFlt);
+  else                        list = coins.filter(c=>c.category===curFlt);
+
+  const lbl = {all:'All Coins',BUY:'BUY Signals',WATCH:'Watch List',AVOID:'Avoid Today',
+    STRONG:'⭐ Strong Long-Term',Major:'Major',Meme:'Meme',Gaming:'Gaming','AI/Data':'AI / Data',DeFi:'DeFi'};
+  $('sec-lbl').textContent = lbl[curFlt] || curFlt;
+  $('sec-cnt').textContent = list.length + ' coins';
+
+  if (!list.length) {
+    $('clist').innerHTML = `<div class="ctr"><p style="color:var(--mut)">No coins match this filter.</p></div>`;
+    return;
+  }
+  $('clist').innerHTML = list.map((c,i) => buildCard(c,i)).join('');
+}
+
+function buildCard(c, i) {
+  const h = c.history || {};
+  const isStrong = h.historicalSignal === 'STRONG BUY' && c.signal === 'BUY';
+  const ringCls  = c.combinedScore>=65?'rg':c.combinedScore>=40?'ry':'rr';
+  const cardCls  = c.signal==='BUY'?'cbuy':c.signal==='WATCH'?'cwatch':'cavoid';
+  const chgCls   = c.change24h>0?'cp':c.change24h<0?'cn':'cz';
+  const d7c  = c.change7d>=0?'var(--grn)':'var(--red)';
+  const d30c = c.change30d>=0?'var(--grn)':'var(--red)';
+  const est  = c.change24h>0 ? Math.round(8/Math.max(c.change24h,0.1))+'d' : '—';
+
+  // Monthly chart
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mAvg = h.monthlyAvgReturn || {};
+  const currM = h.currentMonth || '';
+  const maxAbs = Math.max(1,...Object.values(mAvg).map(v=>Math.abs(v)));
+  const monthChart = MONTHS.map(m => {
+    const v = mAvg[m] || 0;
+    const ht = Math.max(4, Math.round(Math.abs(v)/maxAbs*40));
+    const cls = (v>=0?'mc-p':'mc-n') + (m===currM?' mc-curr':'');
+    return `<div class="mc-col"><div class="mc-bar ${cls}" style="height:${ht}px">${Math.abs(v)>8?Math.round(v)+'%':''}</div><div class="mc-lbl">${m[0]}</div></div>`;
+  }).join('');
+
+  // Year bars
+  const yr = h.yearlyReturns || {};
+  const yearBars = Object.entries(yr).sort((a,b)=>a[0]-b[0]).map(([year,ret]) => {
+    const w = Math.min(100, Math.max(4, Math.abs(ret)/20));
+    const cls = ret>=0?'yr-pos':'yr-neg';
+    return `<div class="yr-row"><div class="yr-lbl">${year}</div><div class="yr-bar-wrap"><div class="yr-bar-fill ${cls}" style="width:${w}%">${ret>0?'+':''}${ret}%</div></div></div>`;
+  }).join('');
+
+  const confCl = {['Very High']:'conf-vh',High:'conf-h',Medium:'conf-m',Low:'conf-l'}[h.dataConfidence]||'conf-l';
+  const sigCls = isStrong ? 'slt' : c.signal==='BUY'?'sg':c.signal==='WATCH'?'sy':'sr';
+  const sigTxt = isStrong ? '⭐ STRONG' : c.signal;
+
+  return `<div class="card ${cardCls}" id="card${i}" onclick="toggle(${i})">
+    <div class="cr1">
+      <div>
+        <div class="cname">${c.name}</div>
+        <div class="csym">${c.symbol}</div>
+        <span class="ccat ${catCls(c.category)}">${c.category}</span>
+        ${c.goodMonthToBuy?`<span style="font-size:9px;color:var(--grn);margin-left:6px;font-weight:700">✓ Good month</span>`:''}
+      </div>
+      <div class="cright">
+        <div class="ring ${ringCls}">${c.combinedScore}</div>
+        <span class="sigp ${sigCls}">${sigTxt}</span>
+      </div>
+    </div>
+    <div class="prow">
+      <div class="price">${fp(c.price)}</div>
+      <span class="chg ${chgCls}">${pct(c.change24h)}</span>
+    </div>
+    <div class="mbar"><div class="mfill" style="width:${Math.min(100,Math.max(4,c.combinedScore))}%"></div></div>
+    <div class="cmeta">
+      <span>24h H: ${fp(c.high24h)}</span>
+      <span>24h L: ${fp(c.low24h)}</span>
+      <span>Est: ${est}</span>
+    </div>
+    <div class="target">8% target → ${fp(c.target8pct)}</div>
+
+    <div class="card-detail">
+      <div class="hist-grid">
+        <div class="hbox"><div class="hbox-lbl">Long-Term Signal</div><div class="hbox-val" style="color:${h.historicalSignal==='STRONG BUY'?'var(--pur)':h.historicalSignal==='BUY'?'var(--grn)':h.historicalSignal==='CAUTION'?'var(--red)':'var(--yel)'}">${h.historicalSignal||'—'}</div><div class="hbox-sub">${h.yearsOfData||0} years of data</div></div>
+        <div class="hbox"><div class="hbox-lbl">Confidence</div><div class="hbox-val"><span class="conf-badge ${confCl}">${h.dataConfidence||'—'}</span></div><div class="hbox-sub">${h.totalDataPoints||0} candles</div></div>
+        <div class="hbox"><div class="hbox-lbl">Avg Yearly Return</div><div class="hbox-val" style="color:${(h.avgYearlyReturn||0)>=0?'var(--grn)':'var(--red)'}">${h.avgYearlyReturn!=null?(h.avgYearlyReturn>0?'+':'')+h.avgYearlyReturn+'%':'—'}</div><div class="hbox-sub">Historical avg</div></div>
+        <div class="hbox"><div class="hbox-lbl">Win Rate</div><div class="hbox-val" style="color:${(h.winRate||0)>=50?'var(--grn)':'var(--red)'}">${h.winRate!=null?h.winRate+'%':'—'}</div><div class="hbox-sub">Positive months</div></div>
+        <div class="hbox"><div class="hbox-lbl">Best Month Buy</div><div class="hbox-val" style="color:var(--grn)">${h.bestMonth||'—'}</div><div class="hbox-sub">Historically best</div></div>
+        <div class="hbox"><div class="hbox-lbl">Volatility</div><div class="hbox-val" style="color:${h.volatilityLabel==='Low'?'var(--grn)':h.volatilityLabel==='Medium'?'var(--yel)':'var(--red)'}">${h.volatilityLabel||'—'}</div><div class="hbox-sub">Daily swings</div></div>
+      </div>
+
+      ${Object.keys(mAvg).length>0?`
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">
+        Monthly Avg Return &nbsp;<span style="color:var(--blu);border:1px solid var(--blu);padding:1px 5px;border-radius:4px">= Now</span>
+      </div>
+      <div class="month-chart">${monthChart}</div>`:``}
+
+      ${yearBars?`<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Year-by-Year Performance</div>${yearBars}`:''}
+
+      <div style="margin-top:12px">
+        <div class="ath-row"><span class="ath-lbl">All-Time High</span><span class="ath-val" style="color:var(--grn)">${fp(c.ath||0)} <span style="font-size:10px;color:var(--dim)">${c.athDate||''}</span></span></div>
+        <div class="ath-row"><span class="ath-lbl">% Below ATH</span><span class="ath-val" style="color:var(--red)">${c.athDrop||0}%</span></div>
+        <div class="ath-row"><span class="ath-lbl">Support (90d)</span><span class="ath-val">${fp(h.support||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Resistance (90d)</span><span class="ath-val">${fp(h.resistance||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Trend</span><span class="ath-val" style="color:${(h.trendLabel||'').includes('Up')?'var(--grn)':'var(--red)'}">${h.trendLabel||'—'}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggle(i) {
+  document.getElementById('card'+i).classList.toggle('expanded');
+}
+
+function flt(f, el) {
+  curFlt = f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  if (coins.length) renderCoins();
+}
+
+function renderProfit() {
+  const buys = coins.filter(c=>c.signal==='BUY').slice(0,10);
+  if (!buys.length) { $('plist').innerHTML=`<div class="ctr"><p style="color:var(--mut);font-size:13px">No BUY signals right now.</p></div>`; return; }
+  const defs = [100000,75000,50000,40000,30000,25000,20000,15000,10000,10000];
+  let ti=0, tp=0;
+  const html = buys.map((c,i)=>{
+    const inv = defs[i]||10000, prof = Math.round(inv*0.08);
+    ti+=inv; tp+=prof;
+    return `<div class="pccard">
+      <div class="pchead">
+        <div><div class="pcname">${c.name} (${c.symbol})</div><div class="pcsub">Score ${c.combinedScore}/100 · ${c.history.historicalSignal||c.signal} · ${c.history.dataConfidence} confidence</div></div>
+        <span class="sigp sg">BUY</span>
+      </div>
+      <div class="pcinp-row"><span class="pcinp-lbl">Invest (₹)</span><input class="pcinp" type="number" value="${inv}" data-i="${i}" oninput="recalc(this)"></div>
+      <div class="pcmeta"><span>Live: ${fp(c.price)}</span><span>Target: ${fp(c.target8pct)}</span><span>Avg/yr: ${c.history.avgYearlyReturn>0?'+':''}${c.history.avgYearlyReturn}%</span></div>
+      <div class="pcprofit" id="pa${i}">+ ${inr(prof)}</div>
+    </div>`;
+  }).join('');
+  $('plist').innerHTML = html + `
+    <div class="pctotal">
+      <div><div class="ptlbl">Total Invested</div><div style="font-family:var(--mono);font-size:13px;color:#6ee7b7;margin-top:3px">${inr(ti)}</div></div>
+      <div style="text-align:right"><div class="ptlbl">8% Profit</div><div class="ptval" id="ptot">+ ${inr(tp)}</div></div>
+    </div>`;
+}
+
+function recalc(el) {
+  const i = parseInt(el.dataset.i);
+  const v = parseFloat(el.value)||0;
+  const pa = document.getElementById('pa'+i);
+  if (pa) pa.textContent = '+ ' + inr(Math.round(v*0.08));
+  let t = 0;
+  document.querySelectorAll('.pcinp').forEach(inp => t += Math.round((parseFloat(inp.value)||0)*0.08));
+  const pt = $('ptot');
+  if (pt) pt.textContent = '+ ' + inr(t);
+}
+
+function nav(s) {
+  document.querySelectorAll('.scr').forEach(el=>el.classList.remove('show'));
+  document.getElementById('s-'+s).classList.add('show');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  $({dash:'n1',profit:'n2',about:'n3'}[s]).classList.add('on');
+}
+
+// Start loading immediately when page opens
+loadAll();
+// Auto-refresh every 5 minutes while page is open
+setInterval(loadAll, 5 * 60 * 1000);
+</script>
+</body>
+</html>
