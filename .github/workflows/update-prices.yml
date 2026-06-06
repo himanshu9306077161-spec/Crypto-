@@ -1,8 +1,8 @@
-name: Update Crypto Data Daily
+name: Update Crypto Data
 
 on:
   schedule:
-    - cron: '30 3 * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
       - name: Install libraries
         run: pip install requests
 
-      - name: Run Analysis
+      - name: Run 20-Factor Analysis
         run: python fetch_data.py
 
       - name: Save results
@@ -32,5 +32,5 @@ jobs:
           git config user.email "bot@github.com"
           git config user.name "Crypto Bot"
           git add data/prices.json
-          git diff --staged --quiet || git commit -m "update: $(date +'%Y-%m-%d %H:%M IST')"
+          git diff --staged --quiet || git commit -m "auto: $(date +'%Y-%m-%d %H:%M IST')"
           git push
