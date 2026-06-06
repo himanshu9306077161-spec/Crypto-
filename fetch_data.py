@@ -272,8 +272,8 @@ def get_signal(score, alpha, gamma, d24):
 
     STRONG BUY also requires positive Gamma (accelerating)
     """
-    if score >= 65 and alpha > 0 and d24 > 0:
-        if gamma > 20:
+    if score >= 65 and d24 > 0:
+        if alpha > 0 and gamma > 20:
             return "STRONG BUY"
         return "BUY"
     if score >= 40:
@@ -403,7 +403,9 @@ def main():
 
         price = b.get("price", 0)
         if price <= 0:
+            print(f"  SKIP {symbol} - not found")
             continue
+        print(f"  [{len(coins_out)+1}] {symbol} ${price} d24={d24}% d7={d7}% d30={d30}%")
 
         d24  = b.get("change24h", 0)
         d7   = cg.get("change7d", 0)
