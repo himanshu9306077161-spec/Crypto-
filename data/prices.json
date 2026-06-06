@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-06-06T08:15:02Z",
-  "updatedAtIST": "06 Jun 2026 01:45 PM IST",
+  "updatedAt": "2026-06-06T08:17:02Z",
+  "updatedAtIST": "06 Jun 2026 01:47 PM IST",
   "currentMonth": "Jun",
   "totalCoins": 0,
   "strongBuyCount": 0,
@@ -9,8 +9,8 @@
   "avoidCount": 0,
   "btcRef": {
     "change24h": 0,
-    "change7d": -16.8109,
-    "change30d": -25.0228
+    "change7d": -16.8321,
+    "change30d": -25.0419
   },
   "engine": "Alpha-Beta-Gamma v1.0",
   "coins": []
