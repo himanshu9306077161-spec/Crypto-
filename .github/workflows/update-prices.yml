@@ -24,7 +24,7 @@ jobs:
       - name: Install libraries
         run: pip install requests
 
-      - name: Run 9-Factor Analysis
+      - name: Run Analysis
         run: python fetch_data.py
 
       - name: Save results
