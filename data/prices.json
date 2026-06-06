@@ -1,1 +1,12 @@
-{"note":"prices loaded live from Binance in browser","coins":[]}
+{
+  "updatedAt": "2026-06-06T07:32:06Z",
+  "updatedAtIST": "06 Jun 2026 01:02 PM IST",
+  "currentMonth": "Jun",
+  "totalCoins": 0,
+  "buyCount": 0,
+  "watchCount": 0,
+  "avoidCount": 0,
+  "priceSource": "Binance (live) + CoinGecko (5yr history)",
+  "longtermPicks": [],
+  "coins": []
+}
