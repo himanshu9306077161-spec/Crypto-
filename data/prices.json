@@ -1,12 +1,17 @@
 {
-  "updatedAt": "2026-06-06T07:32:06Z",
-  "updatedAtIST": "06 Jun 2026 01:02 PM IST",
+  "updatedAt": "2026-06-06T08:15:02Z",
+  "updatedAtIST": "06 Jun 2026 01:45 PM IST",
   "currentMonth": "Jun",
   "totalCoins": 0,
+  "strongBuyCount": 0,
   "buyCount": 0,
   "watchCount": 0,
   "avoidCount": 0,
-  "priceSource": "Binance (live) + CoinGecko (5yr history)",
-  "longtermPicks": [],
+  "btcRef": {
+    "change24h": 0,
+    "change7d": -16.8109,
+    "change30d": -25.0228
+  },
+  "engine": "Alpha-Beta-Gamma v1.0",
   "coins": []
 }
