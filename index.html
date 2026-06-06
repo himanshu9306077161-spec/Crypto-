@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080d1a">
+<title>Crypto α β γ — Live Analyser</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080d1a;--bg2:#0f1729;--bg3:#0a1628;
+  --b1:#1e293b;--b2:#1e3a5f;
+  --txt:#e2e8f0;--mut:#64748b;--dim:#334155;
+  --grn:#4ade80;--gbg:#052e16;--gbd:#166534;
+  --yel:#fbbf24;--ybg:#1c1000;--ybd:#78350f;
+  --red:#f87171;--rbg:#1c0505;--rbd:#7f1d1d;
+  --blu:#60a5fa;--teal:#34d399;--pur:#a78bfa;
+  --ora:#fb923c;--obg:#1c0800;--obd:#9a3412;
+  --mono:'Courier New',monospace;
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--b1);padding:10px 16px;position:sticky;top:0;z-index:99}
+.hdr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.app-name{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--blu);letter-spacing:1px}
+.app-sub{font-size:10px;color:var(--mut)}
+.dot{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;border:1px solid;cursor:pointer}
+.dot-live{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.dot-load{color:var(--yel);background:var(--ybg);border-color:var(--ybd);animation:blink 1.2s infinite}
+.dot-err{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upd-txt{font-size:10px;color:var(--dim);font-family:var(--mono)}
+/* TABS */
+.tabs{display:flex;gap:5px;padding:8px 16px 4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid var(--b1);background:transparent;color:var(--mut);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab.on{background:#1e3a8a;border-color:#3b82f6;color:#93c5fd}
+/* SCREENS */
+.scr{display:none}.scr.show{display:block}
+.pad{padding:12px 16px 90px}
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 16px 6px}
+.sc{background:var(--bg2);border-radius:12px;padding:11px 13px;border:1px solid var(--b1)}
+.sc-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;font-weight:700}
+.sc-val{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1}
+.sc-sub{font-size:10px;color:var(--dim);margin-top:3px}
+/* BTC BAR */
+.btc-bar{margin:6px 16px;background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:10px 14px}
+.btc-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.btc-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.btc-vals{display:flex;gap:12px}
+.bv{font-family:var(--mono);font-size:12px;font-weight:700}
+/* STRONG BUY BANNER */
+.sb-banner{margin:8px 16px;background:linear-gradient(135deg,#0c2240,#1e1040);border:1px solid var(--pur);border-radius:14px;padding:14px}
+.sb-title{font-size:10px;color:var(--pur);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px}
+.sb-coins{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.sb-pill{background:#28103c;border:1px solid var(--pur);color:var(--pur);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:var(--mono)}
+.sb-sub{font-size:10px;color:var(--mut)}
+/* SECTION */
+.sec{display:flex;justify-content:space-between;padding:10px 16px 5px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700}
+/* COIN CARDS */
+.clist{padding:0 16px 90px}
+.card{border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--b1);background:var(--bg3);cursor:pointer}
+.card.cSB{border-color:var(--pur);background:#0f0a1e}
+.card.cBUY{border-color:var(--gbd);background:#0a1e10}
+.card.cWATCH{border-color:var(--ybd);background:#150e00}
+.card.cCAUTION{border-color:var(--obd);background:var(--obg)}
+.card.cAVOID{border-color:var(--rbd)}
+.card.expanded .xpanel{display:block}
+.xpanel{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--b1)}
+.cr1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cname{font-size:15px;font-weight:700;color:var(--txt)}
+.csym{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:1px}
+.ccat{font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;display:inline-block;margin-top:4px}
+.crank{font-size:9px;color:var(--dim);margin-top:2px}
+.cright{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.ring{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;border:2px solid}
+.rSB{border-color:var(--pur);color:var(--pur);background:#28103c}
+.rBUY{border-color:var(--grn);color:var(--grn);background:var(--gbg)}
+.rW{border-color:var(--yel);color:var(--yel);background:var(--ybg)}
+.rC{border-color:var(--ora);color:var(--ora);background:var(--obg)}
+.rA{border-color:var(--red);color:var(--red);background:var(--rbg)}
+.sigp{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid;white-space:nowrap}
+.sSB{color:var(--pur);background:#28103c;border-color:var(--pur)}
+.sBUY{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.sW{color:var(--yel);background:var(--ybg);border-color:var(--ybd)}
+.sC{color:var(--ora);background:var(--obg);border-color:var(--obd)}
+.sA{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+.prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.price{font-family:var(--mono);font-size:17px;font-weight:700}
+.chg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px}
+.cp{color:var(--grn);background:var(--gbg)} .cn{color:var(--red);background:var(--rbg)} .cz{color:var(--mut);background:var(--b1)}
+/* ABG BARS */
+.abg-row{display:flex;gap:6px;margin-bottom:8px}
+.abg-box{flex:1;background:var(--bg2);border-radius:8px;padding:6px 8px;border:1px solid var(--b1);text-align:center}
+.abg-lbl{font-size:9px;color:var(--mut);margin-bottom:2px;font-weight:700;letter-spacing:.5px}
+.abg-val{font-family:var(--mono);font-size:12px;font-weight:700}
+.abg-bar-wrap{height:4px;border-radius:2px;background:var(--b1);margin-top:3px;overflow:hidden}
+.abg-fill{height:100%;border-radius:2px}
+.score-bar{background:var(--b1);border-radius:4px;height:5px;margin-bottom:8px;overflow:hidden}
+.score-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#7c3aed,#4ade80)}
+.cmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);flex-wrap:wrap;gap:4px}
+.target{font-family:var(--mono);font-size:11px;color:var(--teal);margin-top:5px;font-weight:700}
+/* EXPANDED PANEL */
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.hbox{background:var(--bg2);border-radius:10px;padding:10px 12px;border:1px solid var(--b1)}
+.hbox-lbl{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.hbox-val{font-family:var(--mono);font-size:14px;font-weight:700}
+.hbox-sub{font-size:10px;color:var(--dim);margin-top:2px}
+/* CHART */
+.chart-wrap{background:var(--bg2);border:1px solid var(--b1);border-radius:12px;padding:12px;margin-bottom:12px}
+.chart-title{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-weight:700}
+canvas{width:100%;display:block;border-radius:4px}
+/* YEAR BARS */
+.yr-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.yr-lbl{font-family:var(--mono);font-size:11px;color:var(--mut);width:38px;flex-shrink:0}
+.yr-bar{flex:1;background:var(--b1);border-radius:4px;height:18px;overflow:hidden}
+.yr-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:700;font-family:var(--mono);white-space:nowrap}
+.yr-p{background:var(--gbg);color:var(--grn)} .yr-n{background:var(--rbg);color:var(--red)}
+/* MONTHLY CHART */
+.mo-chart{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:12px}
+.mo-col{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mo-lbl{font-size:8px;color:var(--mut);text-align:center}
+.mo-bar{width:100%;border-radius:3px;min-height:4px;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700}
+.mo-p{background:var(--gbg);color:var(--grn)} .mo-n{background:var(--rbg);color:var(--red)} .mo-curr{outline:2px solid var(--blu)}
+/* ATH ROWS */
+.ath-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.ath-lbl{color:var(--mut)}
+.ath-val{font-family:var(--mono);font-weight:700}
+/* PREDICTION BOX */
+.pred-box{background:linear-gradient(135deg,var(--gbg),#042840);border:1px solid var(--teal);border-radius:12px;padding:12px;margin-bottom:12px}
+.pred-title{font-size:10px;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-weight:700}
+.pred-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.pred-item{text-align:center;background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 4px}
+.pred-label{font-size:9px;color:var(--mut);margin-bottom:4px}
+.pred-price{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--teal)}
+.pred-pct{font-size:10px;margin-top:2px}
+/* CATEGORY COLORS */
+.Bitcoin{background:#1c1000;color:#f59e0b}
+.Ethereum{background:#1a0f3a;color:#a78bfa}
+.Major{background:#0c2d5c;color:#93c5fd}
+.Meme{background:#3b0a28;color:#f9a8d4}
+.DeFi{background:#1e1040;color:#c4b5fd}
+.Gaming{background:#042e1e;color:#6ee7b7}
+.L1{background:#3b1200;color:#fdba74}
+.Web3{background:#042840;color:#7dd3fc}
+.AI{background:#28103c;color:#d8b4fe}
+.Sports{background:#052e16;color:#4ade80}
+.Exchange{background:#1c1a00;color:#fde68a}
+.Misc{background:#1e2836;color:#94a3b8}
+/* LOADING */
+.ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:14px;padding:20px;text-align:center}
+.spin{width:36px;height:36px;border:3px solid var(--b1);border-top-color:var(--blu);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--b1);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:99}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;border:none;background:transparent;color:var(--dim);font-size:10px;font-weight:600}
+.nb.on{color:var(--blu)}
+.ni{font-size:20px;line-height:1}
+/* PROFIT */
+.rate-box{background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.rate-lbl{font-size:11px;color:var(--mut);margin-bottom:6px}
+.rate-inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:7px 12px;color:var(--blu);font-family:var(--mono);font-size:16px;font-weight:700;text-align:center}
+.rate-inp:focus{outline:none;border-color:var(--blu)}
+.pccard{border-radius:14px;padding:14px;margin-bottom:10px}
+.pccard.pSB{background:#0f0a1e;border:1px solid var(--pur)}
+.pccard.pBUY{background:#0a1e10;border:1px solid var(--gbd)}
+.pchead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pcname{font-size:14px;font-weight:700}
+.pcsub{font-size:10px;color:var(--mut);margin-top:2px}
+.pcinp-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.pcinp-lbl{font-size:12px;color:var(--mut);flex-shrink:0}
+.pcinp{flex:1;background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:6px 10px;color:var(--blu);font-family:var(--mono);font-size:14px;font-weight:700;text-align:right}
+.pcinp:focus{outline:none;border-color:var(--blu)}
+.pcmeta{font-size:11px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:4px}
+.pcprofit{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--grn)}
+.pctotal{background:#0f6e4a;border:1px solid #10b981;border-radius:14px;padding:14px;margin-top:4px;display:flex;justify-content:space-between;align-items:center}
+.ptlbl{font-size:11px;color:#6ee7b7;font-weight:700}
+.ptval{font-family:var(--mono);font-size:22px;font-weight:700;color:#fff}
+/* ABOUT */
+.acard{background:var(--bg2);border:1px solid var(--b1);border-radius:14px;padding:14px;margin-bottom:10px}
+.atitle{font-size:11px;font-weight:700;color:var(--blu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.acard p,.acard li{font-size:13px;color:var(--mut);line-height:1.8}
+.acard li{margin-left:16px}
+.fbox{background:var(--bg);border:1px solid var(--b2);border-radius:10px;padding:12px;margin:10px 0;font-family:var(--mono);font-size:12px;color:var(--teal);line-height:2}
+.warn{background:var(--rbg);border-color:var(--rbd)}
+.warn .atitle,.warn p{color:#fca5a5}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <div class="app-name">CRYPTO α β γ ANALYSER</div>
+      <div class="app-sub">200 coins · Live prices · 5yr history · Predictions</div>
+    </div>
+    <div class="dot dot-load" id="dot" onclick="loadData()">Loading</div>
+  </div>
+  <div class="upd-txt" id="upd">Fetching data...</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="scr show" id="s-dash">
+  <div class="tabs">
+    <button class="tab on"  onclick="flt('all',this)">All</button>
+    <button class="tab"     onclick="flt('STRONG BUY',this)">⭐ Strong</button>
+    <button class="tab"     onclick="flt('BUY',this)">🟢 BUY</button>
+    <button class="tab"     onclick="flt('WATCH',this)">🟡 WATCH</button>
+    <button class="tab"     onclick="flt('AVOID',this)">🔴 AVOID</button>
+    <button class="tab"     onclick="flt('Bitcoin',this)">₿ BTC</button>
+    <button class="tab"     onclick="flt('Major',this)">Major</button>
+    <button class="tab"     onclick="flt('Meme',this)">Meme</button>
+    <button class="tab"     onclick="flt('DeFi',this)">DeFi</button>
+    <button class="tab"     onclick="flt('AI/Data',this)">AI</button>
+    <button class="tab"     onclick="flt('Gaming',this)">Gaming</button>
+    <button class="tab"     onclick="flt('L1/L2',this)">L1/L2</button>
+  </div>
+  <div class="sgrid"  id="stats"></div>
+  <div id="btc-bar"></div>
+  <div id="sb-banner"></div>
+  <div class="sec"><span id="sec-lbl">All Coins</span><span id="sec-cnt" style="color:var(--dim);font-family:var(--mono)"></span></div>
+  <div class="clist"  id="clist">
+    <div class="ctr"><div class="spin"></div><p style="color:var(--blu);font-family:var(--mono);font-size:12px">Loading analysis...</p></div>
+  </div>
+</div>
+
+<!-- PROFIT CALC -->
+<div class="scr pad" id="s-profit">
+  <div class="rate-box">
+    <div class="rate-lbl">USD → INR Rate (edit if needed)</div>
+    <input class="rate-inp" type="number" id="inr" value="84" oninput="renderProfit()">
+  </div>
+  <div id="plist"></div>
+</div>
+
+<!-- ABOUT -->
+<div class="scr pad" id="s-about">
+  <div class="acard">
+    <div class="atitle">How It Works</div>
+    <p>GitHub Actions runs every day at 9 AM IST, fetches live prices and 5-year history for 200 top coins from CoinGecko, runs the Alpha Beta Gamma algorithm, and saves results. The website reads this data instantly when you open it.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">α β γ Formula</div>
+    <div class="fbox">
+Final Score = α(40%) + β(15%) + γ(25%) + Momentum(20%)
+
+α Alpha  = Coin outperformance vs Bitcoin
+β Beta   = Market sensitivity (ideal: 1.2x–3.0x)
+γ Gamma  = Momentum acceleration (speeding up?)
+Momentum = Multi-timeframe trend strength
+    </div>
+    <p>Works in BOTH bull and bear markets. All scores normalized to 0–100 relative to current market conditions.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Future Price Predictions</div>
+    <p>Predictions use linear regression on historical momentum + seasonal patterns. Each coin card shows 7-day, 30-day, and 90-day price targets based on current trajectory. These are mathematical projections — not guaranteed.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Signal Rules</div>
+    <p>⭐ <strong style="color:var(--pur)">STRONG BUY</strong> — Score ≥ 72 + positive 24h + Alpha > 5%</p>
+    <p style="margin-top:6px">🟢 <strong style="color:var(--grn)">BUY</strong> — Score ≥ 72 + positive 24h</p>
+    <p style="margin-top:6px">🟡 <strong style="color:var(--yel)">WATCH</strong> — Score 55–71</p>
+    <p style="margin-top:6px">🟠 <strong style="color:var(--ora)">CAUTION</strong> — Score 35–54</p>
+    <p style="margin-top:6px">🔴 <strong style="color:var(--red)">AVOID</strong> — Score below 35</p>
+  </div>
+  <div class="acard warn">
+    <div class="atitle">Disclaimer</div>
+    <p>Educational purposes only. Not financial advice. Crypto is unregulated and highly volatile. Predictions are mathematical estimates, not guarantees. You may lose all your money. Always do your own research.</p>
+  </div>
+</div>
+
+<nav class="bnav">
+  <button class="nb on" id="n1" onclick="nav('dash')"><span class="ni">📊</span>Dashboard</button>
+  <button class="nb"    id="n2" onclick="nav('profit')"><span class="ni">💰</span>Profit</button>
+  <button class="nb"    id="n3" onclick="nav('about')"><span class="ni">ℹ️</span>About</button>
+</nav>
+
+<script>
+let coins=[], curFlt='all', btcRef={};
+const $=id=>document.getElementById(id);
+
+// ── FORMAT HELPERS ────────────────────────────────────────────────────────────
+function fp(p){
+  if(!p||p===0)return'$0';
+  if(p>=10000)return'$'+Math.round(p).toLocaleString('en-US');
+  if(p>=100)  return'$'+p.toFixed(2);
+  if(p>=1)    return'$'+p.toFixed(3);
+  if(p<0.000001)return'$'+p.toFixed(9);
+  if(p<0.0001)  return'$'+p.toFixed(8);
+  if(p<0.01)    return'$'+p.toFixed(6);
+  return'$'+p.toFixed(4);
+}
+function pct(n){return(n>=0?'+':'')+Number(n).toFixed(2)+'%'}
+function inr(n){return'₹'+Math.round(n).toLocaleString('en-IN')}
+function num(n,d=1){return(n>=0?'+':'')+Number(n).toFixed(d)}
+function catCls(c){
+  return{Bitcoin:'Bitcoin',Ethereum:'Ethereum',Major:'Major',Meme:'Meme',
+    DeFi:'DeFi',Gaming:'Gaming','L1/L2':'L1',Web3:'Web3',
+    'AI/Data':'AI',Sports:'Sports',Exchange:'Exchange',Misc:'Misc'}[c]||'Misc';
+}
+function sigCls(s){
+  return{'STRONG BUY':'sSB',BUY:'sBUY',WATCH:'sW',CAUTION:'sC',AVOID:'sA'}[s]||'sA';
+}
+function ringCls(s){
+  return{'STRONG BUY':'rSB',BUY:'rBUY',WATCH:'rW',CAUTION:'rC',AVOID:'rA'}[s]||'rA';
+}
+function cardCls(s){
+  return{'STRONG BUY':'cSB',BUY:'cBUY',WATCH:'cWATCH',CAUTION:'cCAUTION',AVOID:'cAVOID'}[s]||'cAVOID';
+}
+function chgColor(n){return n>0?'var(--grn)':n<0?'var(--red)':'var(--mut)'}
+
+// ── FUTURE PRICE PREDICTIONS ──────────────────────────────────────────────────
+function predictPrices(price, d24, d7, d30, hist) {
+  // Use momentum-based linear regression
+  // Daily rate from different timeframes
+  const rate24h = d24 / 100;
+  const rate7d  = Math.pow(1 + d7 / 100, 1/7) - 1;  // daily rate from 7d
+  const rate30d = Math.pow(1 + d30 / 100, 1/30) - 1; // daily rate from 30d
+
+  // Weighted daily rate (recent matters more, but tempered by longer trend)
+  const dailyRate = rate24h * 0.20 + rate7d * 0.50 + rate30d * 0.30;
+
+  // Apply dampening (momentum rarely sustains fully)
+  const dampen = 0.65;
+  const dr = dailyRate * dampen;
+
+  // Historical seasonal adjustment
+  const hist_avg = hist?.avgYearlyReturn || 0;
+  const seasonal_boost = hist_avg > 0 ? 1.005 : 0.998; // tiny monthly boost
+
+  const p7d  = price * Math.pow(1 + dr, 7) * Math.pow(seasonal_boost, 0.25);
+  const p30d = price * Math.pow(1 + dr, 30) * Math.pow(seasonal_boost, 1);
+  const p90d = price * Math.pow(1 + dr, 90) * Math.pow(seasonal_boost, 3);
+
+  return {
+    days7:  { price: p7d,  pct: ((p7d-price)/price*100).toFixed(1) },
+    days30: { price: p30d, pct: ((p30d-price)/price*100).toFixed(1) },
+    days90: { price: p90d, pct: ((p90d-price)/price*100).toFixed(1) },
+  };
+}
+
+// ── SPARKLINE CHART ───────────────────────────────────────────────────────────
+function drawSparkline(canvasId, yearlyReturns, monthlyAvg) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 280;
+  const H = 80;
+  canvas.width = W;
+  canvas.height = H;
+
+  // Build data points from yearly returns
+  const entries = Object.entries(yearlyReturns || {}).sort((a,b)=>a[0]-b[0]);
+  if (entries.length < 2) {
+    ctx.fillStyle = '#334155';
+    ctx.font = '11px monospace';
+    ctx.fillText('Insufficient history data', 10, H/2);
+    return;
+  }
+
+  const values = entries.map(e => parseFloat(e[1]));
+  // Clamp for display (very high values distort the chart)
+  const maxV = Math.min(500, Math.max(...values));
+  const minV = Math.min(-100, Math.min(...values));
+  const range = maxV - minV || 1;
+
+  const padX = 8, padY = 10;
+  const chartW = W - padX*2;
+  const chartH = H - padY*2;
+
+  const pts = values.map((v, i) => ({
+    x: padX + (i / (values.length - 1)) * chartW,
+    y: padY + (1 - (Math.min(v, maxV) - minV) / range) * chartH
+  }));
+
+  // Zero line
+  const zeroY = padY + (1 - (0 - minV) / range) * chartH;
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padX, zeroY);
+  ctx.lineTo(W - padX, zeroY);
+  ctx.stroke();
+
+  // Fill gradient
+  const grad = ctx.createLinearGradient(0, padY, 0, H);
+  grad.addColorStop(0, 'rgba(74,222,128,0.3)');
+  grad.addColorStop(1, 'rgba(74,222,128,0.02)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Line
+  ctx.strokeStyle = '#4ade80';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  // Future prediction line (dashed, extending right)
+  if (pts.length >= 2) {
+    const last = pts[pts.length-1];
+    const prev = pts[pts.length-2];
+    const dx = last.x - prev.x;
+    const dy = last.y - prev.y;
+    const futureY = Math.max(padY, Math.min(H-padY, last.y + dy * 0.7));
+
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(last.x + dx, futureY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Labels
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px monospace';
+    entries.forEach((e, i) => {
+      if (i % 2 === 0 || i === entries.length-1) {
+        ctx.fillText(e[0], pts[i].x - 10, H - 2);
+      }
+    });
+  }
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  $('dot').className = 'dot dot-load';
+  $('dot').textContent = 'Loading';
+  try {
+    const r = await fetch('data/prices.json?v=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+
+    if (!d.coins || d.coins.length === 0) {
+      throw new Error('No coin data yet.\n\nGo to GitHub repo → Actions tab → "Update Crypto Data Daily" → Run workflow → wait 8 minutes');
+    }
+
+    coins  = d.coins;
+    btcRef = d.btcRef || {};
+
+    $('upd').textContent = 'Updated: ' + (d.updatedAtIST||'') + ' · ' + (d.engine||'');
+    $('dot').className = 'dot dot-live';
+    $('dot').textContent = '● LIVE';
+
+    // Update tab counts
+    const sb = coins.filter(c=>c.signal==='STRONG BUY').length;
+    const b  = coins.filter(c=>c.signal==='BUY').length;
+    const w  = coins.filter(c=>c.signal==='WATCH').length;
+    const av = coins.filter(c=>c.signal==='AVOID'||c.signal==='CAUTION').length;
+    document.querySelectorAll('.tab')[1].textContent = `⭐ Strong (${sb})`;
+    document.querySelectorAll('.tab')[2].textContent = `🟢 BUY (${b})`;
+    document.querySelectorAll('.tab')[3].textContent = `🟡 WATCH (${w})`;
+    document.querySelectorAll('.tab')[4].textContent = `🔴 AVOID (${av})`;
+
+    renderStats(d);
+    renderBTCBar();
+    renderSBBanner();
+    renderCoins();
+    renderProfit();
+
+  } catch(e) {
+    $('dot').className = 'dot dot-err';
+    $('dot').textContent = 'ERROR';
+    $('upd').textContent = 'Failed to load prices';
+    $('clist').innerHTML = `<div class="ctr"><p style="color:var(--red);font-size:13px;line-height:2;white-space:pre-line">${e.message}</p></div>`;
+  }
+}
+
+function renderStats(d) {
+  const sb = coins.filter(c=>c.signal==='STRONG BUY').length;
+  const b  = coins.filter(c=>c.signal==='BUY').length;
+  const btc = coins.find(c=>c.symbol==='BTC');
+  const topAlpha = [...coins].sort((a,z)=>z.alpha-a.alpha)[0];
+  $('stats').innerHTML = `
+    <div class="sc"><div class="sc-lbl">⭐ Strong Buy</div><div class="sc-val" style="color:var(--pur)">${sb}</div><div class="sc-sub">Best α β γ score</div></div>
+    <div class="sc"><div class="sc-lbl">🟢 Buy Today</div><div class="sc-val" style="color:var(--grn)">${b}</div><div class="sc-sub">10% target</div></div>
+    <div class="sc"><div class="sc-lbl">₿ Bitcoin</div><div class="sc-val" style="color:#f59e0b;font-size:14px">${btc?fp(btc.price):'—'}</div><div class="sc-sub">${btc?pct(btc.change24h):''}</div></div>
+    <div class="sc"><div class="sc-lbl">Top Alpha</div><div class="sc-val" style="color:var(--teal);font-size:14px">${topAlpha?topAlpha.symbol:'—'}</div><div class="sc-sub">α${topAlpha?num(topAlpha.alpha):'—'}%</div></div>`;
+}
+
+function renderBTCBar() {
+  if(!btcRef.change30d&&btcRef.change30d!==0){$('btc-bar').innerHTML='';return;}
+  $('btc-bar').innerHTML=`
+    <div class="btc-bar">
+      <div class="btc-row">
+        <div><div class="btc-lbl">BTC Reference (Alpha baseline)</div></div>
+        <div class="btc-vals">
+          <span class="bv" style="color:${chgColor(btcRef.change24h)}">24h: ${pct(btcRef.change24h)}</span>
+          <span class="bv" style="color:${chgColor(btcRef.change7d)}">7d: ${pct(btcRef.change7d)}</span>
+          <span class="bv" style="color:${chgColor(btcRef.change30d)}">30d: ${pct(btcRef.change30d)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderSBBanner() {
+  const top = coins.filter(c=>c.signal==='STRONG BUY').slice(0,6).map(c=>c.symbol);
+  if(!top.length){$('sb-banner').innerHTML='';return;}
+  $('sb-banner').innerHTML=`
+    <div class="sb-banner">
+      <div class="sb-title">⭐ Strong Buy Today — Best α β γ Score</div>
+      <div class="sb-coins">${top.map(s=>`<span class="sb-pill">${s}</span>`).join('')}</div>
+      <div class="sb-sub">Outperforming BTC + accelerating momentum + optimal Beta. Tap any coin for full breakdown + future price predictions.</div>
+    </div>`;
+}
+
+function renderCoins() {
+  let list;
+  if(curFlt==='all') list=coins;
+  else if(['STRONG BUY','BUY','WATCH','CAUTION','AVOID'].includes(curFlt))
+    list=coins.filter(c=>c.signal===curFlt);
+  else list=coins.filter(c=>c.category===curFlt);
+
+  const lbl={all:'All Coins','STRONG BUY':'⭐ Strong Buy',BUY:'BUY Signals',WATCH:'Watch List',
+    CAUTION:'Caution',AVOID:'Avoid',Bitcoin:'Bitcoin',Major:'Major Coins',
+    Meme:'Meme Coins',DeFi:'DeFi',Gaming:'Gaming','AI/Data':'AI / Data',
+    'L1/L2':'L1 / L2',Ethereum:'Ethereum'};
+  $('sec-lbl').textContent = lbl[curFlt]||curFlt;
+  $('sec-cnt').textContent = list.length+' coins';
+
+  if(!list.length){
+    $('clist').innerHTML=`<div class="ctr"><p style="color:var(--mut)">No coins in this filter.</p></div>`;
+    return;
+  }
+  $('clist').innerHTML = list.map((c,i)=>buildCard(c,i)).join('');
+
+  // Draw sparkline charts after render
+  setTimeout(() => {
+    list.forEach((c,i) => {
+      if(c.history&&c.history.yearlyReturns) {
+        drawSparkline(`spark-${i}`, c.history.yearlyReturns, c.history.monthlyAvgReturn);
+      }
+    });
+  }, 100);
+}
+
+function buildCard(c, i) {
+  const h   = c.history || {};
+  const sc  = sigCls(c.signal);
+  const rc  = ringCls(c.signal);
+  const cc  = cardCls(c.signal);
+  const chc = c.change24h>0?'cp':c.change24h<0?'cn':'cz';
+  const ac  = c.alpha>0?'var(--grn)':c.alpha<0?'var(--red)':'var(--mut)';
+  const bc  = (c.beta>=1.2&&c.beta<=3)?'var(--grn)':c.beta<0.5?'var(--red)':'var(--yel)';
+  const gc  = c.gamma>20?'var(--grn)':c.gamma>0?'var(--teal)':c.gamma>-20?'var(--yel)':'var(--red)';
+
+  // Future predictions
+  const pred = predictPrices(c.price, c.change24h, c.change7d, c.change30d, h);
+
+  // Monthly chart
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mAvg = h.monthlyAvgReturn||{};
+  const currM = h.currentMonth||'';
+  const maxA = Math.max(1,...Object.values(mAvg).map(v=>Math.abs(v)));
+  const moChart = MONTHS.map(m=>{
+    const v=mAvg[m]||0, ht=Math.max(4,Math.round(Math.abs(v)/maxA*40));
+    return`<div class="mo-col"><div class="mo-bar ${v>=0?'mo-p':'mo-n'}${m===currM?' mo-curr':''}" style="height:${ht}px">${Math.abs(v)>8?Math.round(v)+'%':''}</div><div class="mo-lbl">${m[0]}</div></div>`;
+  }).join('');
+
+  // Year bars
+  const yr=h.yearlyReturns||{};
+  const yearBars=Object.entries(yr).sort((a,b)=>a[0]-b[0]).map(([y,ret])=>{
+    const w=Math.min(100,Math.max(4,Math.abs(ret)/50));
+    return`<div class="yr-row"><div class="yr-lbl">${y}</div><div class="yr-bar"><div class="yr-fill ${ret>=0?'yr-p':'yr-n'}" style="width:${w}%">${ret>0?'+':''}${ret}%</div></div></div>`;
+  }).join('');
+
+  const predColor = (p) => parseFloat(p)>=0?'var(--grn)':'var(--red)';
+
+  return `<div class="card ${cc}" id="card${i}" onclick="toggleCard(${i})">
+    <div class="cr1">
+      <div>
+        <div class="cname">${c.name}</div>
+        <div class="csym">${c.symbol}</div>
+        <span class="ccat ${catCls(c.category)}">${c.category}</span>
+        <div class="crank">#${c.rank||i+1} by market cap${c.goodMonthToBuy?` · <span style="color:var(--grn)">✓ Good month</span>`:''}</div>
+      </div>
+      <div class="cright">
+        <div class="ring ${rc}">${c.score}</div>
+        <span class="sigp ${sc}">${c.signal}</span>
+      </div>
+    </div>
+
+    <div class="prow">
+      <div class="price">${fp(c.price)}</div>
+      <span class="chg ${chc}">${pct(c.change24h)}</span>
+    </div>
+
+    <div class="abg-row">
+      <div class="abg-box">
+        <div class="abg-lbl">α ALPHA</div>
+        <div class="abg-val" style="color:${ac}">${num(c.alpha)}%</div>
+        <div class="abg-bar-wrap"><div class="abg-fill" style="width:${c.alphaNorm||0}%;background:${ac}"></div></div>
+      </div>
+      <div class="abg-box">
+        <div class="abg-lbl">β BETA</div>
+        <div class="abg-val" style="color:${bc}">${Number(c.beta).toFixed(2)}x</div>
+        <div class="abg-bar-wrap"><div class="abg-fill" style="width:${c.betaScore||0}%;background:${bc}"></div></div>
+      </div>
+      <div class="abg-box">
+        <div class="abg-lbl">γ GAMMA</div>
+        <div class="abg-val" style="color:${gc}">${num(c.gamma)}%</div>
+        <div class="abg-bar-wrap"><div class="abg-fill" style="width:${c.gammaNorm||0}%;background:${gc}"></div></div>
+      </div>
+    </div>
+
+    <div class="score-bar"><div class="score-fill" style="width:${c.score}%"></div></div>
+    <div class="cmeta">
+      <span>7d: <span style="color:${chgColor(c.change7d)}">${pct(c.change7d)}</span></span>
+      <span>30d: <span style="color:${chgColor(c.change30d)}">${pct(c.change30d)}</span></span>
+      <span>Vol: $${c.volumeM}M</span>
+    </div>
+    <div class="target">10% target → ${fp(c.target10pct)}</div>
+
+    <div class="xpanel">
+      <!-- ABG SCORES -->
+      <div class="hgrid">
+        <div class="hbox"><div class="hbox-lbl">α Alpha</div><div class="hbox-val" style="color:${ac}">${c.alphaNorm}/100</div><div class="hbox-sub">vs BTC: ${num(c.alpha)}%</div></div>
+        <div class="hbox"><div class="hbox-lbl">β Beta</div><div class="hbox-val" style="color:${bc}">${c.betaScore}/100</div><div class="hbox-sub">Sensitivity: ${Number(c.beta).toFixed(2)}x</div></div>
+        <div class="hbox"><div class="hbox-lbl">γ Gamma</div><div class="hbox-val" style="color:${gc}">${c.gammaNorm}/100</div><div class="hbox-sub">Accel: ${num(c.gamma)}%</div></div>
+        <div class="hbox"><div class="hbox-lbl">Momentum</div><div class="hbox-val" style="color:${chgColor(c.momentum-50)}">${c.momentum}/100</div><div class="hbox-sub">Multi-timeframe</div></div>
+        <div class="hbox"><div class="hbox-lbl">Avg Yearly</div><div class="hbox-val" style="color:${(h.avgYearlyReturn||0)>=0?'var(--grn)':'var(--red)'}">${(h.avgYearlyReturn||0)>0?'+':''}${h.avgYearlyReturn||0}%</div><div class="hbox-sub">${h.yearsOfData||0} yrs data</div></div>
+        <div class="hbox"><div class="hbox-lbl">Win Rate</div><div class="hbox-val" style="color:${(h.winRate||0)>=50?'var(--grn)':'var(--red)'}">${h.winRate||0}%</div><div class="hbox-sub">Best: ${h.bestMonth||'—'}</div></div>
+      </div>
+
+      <!-- FUTURE PREDICTIONS -->
+      <div class="pred-box">
+        <div class="pred-title">📈 Price Predictions (Mathematical Projection)</div>
+        <div class="pred-grid">
+          <div class="pred-item">
+            <div class="pred-label">7 Days</div>
+            <div class="pred-price">${fp(pred.days7.price)}</div>
+            <div class="pred-pct" style="color:${predColor(pred.days7.pct)}">${pred.days7.pct}%</div>
+          </div>
+          <div class="pred-item">
+            <div class="pred-label">30 Days</div>
+            <div class="pred-price">${fp(pred.days30.price)}</div>
+            <div class="pred-pct" style="color:${predColor(pred.days30.pct)}">${pred.days30.pct}%</div>
+          </div>
+          <div class="pred-item">
+            <div class="pred-label">90 Days</div>
+            <div class="pred-price">${fp(pred.days90.price)}</div>
+            <div class="pred-pct" style="color:${predColor(pred.days90.pct)}">${pred.days90.pct}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SPARKLINE CHART -->
+      ${Object.keys(yr).length>=2?`
+      <div class="chart-wrap">
+        <div class="chart-title">Yearly Performance Chart + Future Trend</div>
+        <canvas id="spark-${i}" height="80"></canvas>
+      </div>`:''}
+
+      <!-- MONTHLY SEASONALITY -->
+      ${Object.keys(mAvg).length>0?`
+      <div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Monthly Seasonality <span style="color:var(--blu);border:1px solid;padding:1px 5px;border-radius:4px;margin-left:4px">= Now</span></div>
+      <div class="mo-chart">${moChart}</div>`:''}
+
+      <!-- YEARLY BARS -->
+      ${yearBars?`<div style="font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Year-by-Year Returns</div>${yearBars}`:''}
+
+      <!-- PRICE STATS -->
+      <div style="margin-top:12px">
+        <div class="ath-row"><span class="ath-lbl">All-Time High</span><span class="ath-val" style="color:var(--grn)">${fp(c.ath||0)} <span style="color:var(--dim);font-size:10px">${c.athDate||''}</span></span></div>
+        <div class="ath-row"><span class="ath-lbl">% Below ATH</span><span class="ath-val" style="color:var(--red)">${c.athDrop||0}%</span></div>
+        <div class="ath-row"><span class="ath-lbl">24h High</span><span class="ath-val" style="color:var(--grn)">${fp(c.high24h||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">24h Low</span><span class="ath-val" style="color:var(--red)">${fp(c.low24h||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Support (90d)</span><span class="ath-val">${fp(h.support||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Resistance (90d)</span><span class="ath-val">${fp(h.resistance||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">1-Year Change</span><span class="ath-val" style="color:${chgColor(c.change1y)}">${pct(c.change1y||0)}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCard(i) {
+  const el = document.getElementById('card'+i);
+  const wasExpanded = el.classList.contains('expanded');
+  el.classList.toggle('expanded');
+  if (!wasExpanded) {
+    const c = (curFlt==='all'?coins:coins.filter(c=>
+      ['STRONG BUY','BUY','WATCH','CAUTION','AVOID'].includes(curFlt)?c.signal===curFlt:c.category===curFlt
+    ))[i];
+    if (c&&c.history&&c.history.yearlyReturns) {
+      setTimeout(()=>drawSparkline(`spark-${i}`,c.history.yearlyReturns,c.history.monthlyAvgReturn),50);
+    }
+  }
+}
+
+function flt(f, el) {
+  curFlt=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  if(coins.length) renderCoins();
+}
+
+function renderProfit() {
+  const buys = coins.filter(c=>c.signal==='STRONG BUY'||c.signal==='BUY').slice(0,12);
+  if(!buys.length){
+    $('plist').innerHTML=`<div class="ctr"><p style="color:var(--mut)">No BUY signals right now.<br><br>Run GitHub Actions workflow to refresh prices.</p></div>`;
+    return;
+  }
+  const defs=[500000,300000,200000,150000,100000,75000,50000,40000,30000,20000,15000,10000];
+  let ti=0,tp=0;
+  const html=buys.map((c,i)=>{
+    const inv=defs[i]||10000, prof=Math.round(inv*0.10);
+    ti+=inv; tp+=prof;
+    const isSB=c.signal==='STRONG BUY';
+    const pred=predictPrices(c.price,c.change24h,c.change7d,c.change30d,c.history);
+    return`<div class="pccard ${isSB?'pSB':'pBUY'}">
+      <div class="pchead">
+        <div>
+          <div class="pcname">${c.name} (${c.symbol})</div>
+          <div class="pcsub">Score ${c.score}/100 · α${num(c.alpha)}% β${Number(c.beta).toFixed(2)}x γ${num(c.gamma)}%</div>
+        </div>
+        <span class="sigp ${isSB?'sSB':'sBUY'}">${c.signal}</span>
+      </div>
+      <div class="pcinp-row">
+        <span class="pcinp-lbl">Invest (₹)</span>
+        <input class="pcinp" type="number" value="${inv}" data-i="${i}" oninput="recalc(this)">
+      </div>
+      <div class="pcmeta">
+        <span>Price: ${fp(c.price)}</span>
+        <span>10% Target: ${fp(c.target10pct)}</span>
+        <span>30d pred: <span style="color:${chgColor(parseFloat(pred.days30.pct))}">${pred.days30.pct}%</span></span>
+      </div>
+      <div class="pcprofit" id="pa${i}">+ ${inr(prof)}</div>
+    </div>`;
+  }).join('');
+  $('plist').innerHTML=html+`
+    <div class="pctotal">
+      <div><div class="ptlbl">Total Invested</div><div style="font-family:var(--mono);font-size:13px;color:#6ee7b7;margin-top:3px">${inr(ti)}</div></div>
+      <div style="text-align:right"><div class="ptlbl">10% Profit</div><div class="ptval" id="ptot">+ ${inr(tp)}</div></div>
+    </div>`;
+}
+
+function recalc(el) {
+  const i=parseInt(el.dataset.i), v=parseFloat(el.value)||0;
+  const pa=document.getElementById('pa'+i);
+  if(pa) pa.textContent='+ '+inr(Math.round(v*0.10));
+  let t=0;
+  document.querySelectorAll('.pcinp').forEach(inp=>t+=Math.round((parseFloat(inp.value)||0)*0.10));
+  const pt=$('ptot');
+  if(pt) pt.textContent='+ '+inr(t);
+}
+
+function nav(s) {
+  document.querySelectorAll('.scr').forEach(el=>el.classList.remove('show'));
+  document.getElementById('s-'+s).classList.add('show');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  $({dash:'n1',profit:'n2',about:'n3'}[s]).classList.add('on');
+}
+
+loadData();
+setInterval(loadData, 10*60*1000);
+</script>
+</body>
+</html>
