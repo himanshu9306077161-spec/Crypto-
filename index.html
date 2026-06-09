@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080d1a">
+<title>Crypto Analyser — 20 Factors + Quantum</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#080d1a;--bg2:#0f1729;--bg3:#0a1628;
+  --b1:#1e293b;--b2:#1e3a5f;--b3:#0f1e30;
+  --txt:#e2e8f0;--mut:#64748b;--dim:#334155;
+  --grn:#4ade80;--gbg:#052e16;--gbd:#166534;
+  --yel:#fbbf24;--ybg:#1c1000;--ybd:#78350f;
+  --red:#f87171;--rbg:#1c0505;--rbd:#7f1d1d;
+  --blu:#60a5fa;--teal:#34d399;--pur:#a78bfa;
+  --ora:#fb923c;--obg:#1c0800;--obd:#9a3412;
+  --gold:#f59e0b;--mono:'Courier New',monospace;
+}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+.hdr{background:var(--bg2);border-bottom:1px solid var(--b1);padding:10px 16px;position:sticky;top:0;z-index:99}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;gap:8px}
+.app-name{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--blu);letter-spacing:1px}
+.app-sub{font-size:9px;color:var(--mut);margin-top:1px}
+.hdr-badges{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;border:1px solid;cursor:pointer;white-space:nowrap}
+.live-badge{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.load-badge{color:var(--yel);background:var(--ybg);border-color:var(--ybd);animation:blink 1.2s infinite}
+.err-badge{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upd-txt{font-size:9px;color:var(--dim);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:6px 12px 4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--b1);background:transparent;color:var(--mut);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab.on{background:#1e3a8a;border-color:#3b82f6;color:#93c5fd}
+
+/* SCREENS */
+.scr{display:none}.scr.show{display:block}
+.pad{padding:12px 16px 90px}
+
+/* MARKET BAR */
+.mkt-bar{display:flex;gap:7px;padding:8px 12px 4px;overflow-x:auto;scrollbar-width:none}
+.mkt-bar::-webkit-scrollbar{display:none}
+.mkt-item{flex-shrink:0;background:var(--bg2);border:1px solid var(--b1);border-radius:10px;padding:5px 10px;text-align:center;min-width:78px}
+.mkt-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:1px}
+.mkt-val{font-family:var(--mono);font-size:12px;font-weight:700}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px 12px 6px}
+.sc{background:var(--bg2);border-radius:12px;padding:10px 12px;border:1px solid var(--b1)}
+.sc-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;font-weight:700}
+.sc-val{font-family:var(--mono);font-size:19px;font-weight:700;line-height:1}
+.sc-sub{font-size:9px;color:var(--dim);margin-top:2px}
+
+/* BANNER */
+.sb-banner{margin:5px 12px;background:linear-gradient(135deg,#0c2240,#1e1040);border:1px solid var(--pur);border-radius:14px;padding:11px 13px}
+.sb-title{font-size:9px;color:var(--pur);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:7px}
+.sb-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.sb-pill{background:#28103c;border:1px solid var(--pur);color:var(--pur);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;font-family:var(--mono)}
+.sb-sub{font-size:9px;color:var(--mut)}
+
+/* SECTION */
+.sec{display:flex;justify-content:space-between;padding:6px 12px 3px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700}
+
+/* COIN CARDS */
+.clist{padding:0 12px 90px}
+.card{border-radius:14px;padding:13px;margin-bottom:9px;border:1px solid var(--b1);background:var(--bg3);cursor:pointer;transition:border-color .2s}
+.card.cSB{border-color:var(--pur);background:#0f0a1e}
+.card.cBUY{border-color:var(--gbd);background:#0a1e10}
+.card.cWATCH{border-color:var(--ybd);background:#150e00}
+.card.cCAU{border-color:var(--obd);background:var(--obg)}
+.card.cAVO{border-color:var(--rbd)}
+.xp{display:none;margin-top:13px;padding-top:13px;border-top:1px solid var(--b1)}
+.card.expanded .xp{display:block}
+
+.cr1{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.cname{font-size:14px;font-weight:700}
+.csym{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:1px}
+.ccat{font-size:8px;font-weight:700;padding:2px 6px;border-radius:5px;display:inline-block;margin-top:2px}
+.crank{font-size:8px;color:var(--dim);margin-top:2px}
+.cright{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.ring{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;border:2px solid;flex-shrink:0}
+.rSB{border-color:var(--pur);color:var(--pur);background:#28103c}
+.rBUY{border-color:var(--grn);color:var(--grn);background:var(--gbg)}
+.rW{border-color:var(--yel);color:var(--yel);background:var(--ybg)}
+.rC{border-color:var(--ora);color:var(--ora);background:var(--obg)}
+.rA{border-color:var(--red);color:var(--red);background:var(--rbg)}
+.sigp{font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid;white-space:nowrap}
+.sSB{color:var(--pur);background:#28103c;border-color:var(--pur)}
+.sBUY{color:var(--grn);background:var(--gbg);border-color:var(--gbd)}
+.sW{color:var(--yel);background:var(--ybg);border-color:var(--ybd)}
+.sC{color:var(--ora);background:var(--obg);border-color:var(--obd)}
+.sA{color:var(--red);background:var(--rbg);border-color:var(--rbd)}
+
+.prow{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.price{font-family:var(--mono);font-size:16px;font-weight:700;transition:color .3s}
+.price.updated{color:var(--teal)!important}
+.chg{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
+.cp{color:var(--grn);background:var(--gbg)}
+.cn{color:var(--red);background:var(--rbg)}
+.cz{color:var(--mut);background:var(--b1)}
+
+/* ABG FACTORS */
+.abg-row{display:flex;gap:4px;margin-bottom:7px}
+.abg-box{flex:1;background:var(--bg2);border-radius:8px;padding:5px 6px;border:1px solid var(--b1);text-align:center;min-width:0}
+.abg-lbl{font-size:7px;color:var(--mut);margin-bottom:2px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.abg-val{font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.abg-bar{height:2px;border-radius:2px;background:var(--b1);margin-top:2px;overflow:hidden}
+.abg-fill{height:100%;border-radius:2px}
+.score-bar{background:var(--b1);border-radius:4px;height:4px;margin-bottom:7px;overflow:hidden}
+.score-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#7c3aed,#4ade80)}
+.cmeta{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);flex-wrap:wrap;gap:2px}
+.target{font-family:var(--mono);font-size:10px;color:var(--teal);margin-top:4px;font-weight:700}
+
+/* QUANTUM / SCIENTIFIC SECTION */
+.sci-section{background:linear-gradient(135deg,#0d1f35,#1a0f3a);border:1px solid #2a4a8a;border-radius:12px;padding:12px;margin-bottom:11px}
+.sci-title{font-size:9px;color:var(--blu);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:5px}
+.sci-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.sci-item{background:rgba(0,0,0,.4);border-radius:8px;padding:7px 9px;border:1px solid var(--b2)}
+.sci-lbl{font-size:8px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.sci-val{font-family:var(--mono);font-size:13px;font-weight:700}
+.sci-sub{font-size:9px;color:var(--dim);margin-top:2px}
+.prob-bar{height:5px;background:var(--b1);border-radius:3px;overflow:hidden;margin-top:4px}
+.prob-fill{height:100%;border-radius:3px}
+.quantum-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;border:2px solid;flex-shrink:0}
+
+/* 20 FACTOR GRID */
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:11px}
+.fitem{background:var(--bg2);border-radius:7px;padding:6px 8px;border:1px solid var(--b1)}
+.fi-lbl{font-size:7px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.fi-bar{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;margin-bottom:2px}
+.fi-fill{height:100%;border-radius:2px}
+.fi-val{font-family:var(--mono);font-size:10px;font-weight:700}
+
+/* PREDICTION */
+.pred-box{background:linear-gradient(135deg,var(--gbg),#042840);border:1px solid var(--teal);border-radius:12px;padding:11px;margin-bottom:11px}
+.pred-title{font-size:9px;color:var(--teal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px;font-weight:700}
+.pred-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.pred-item{text-align:center;background:rgba(0,0,0,.3);border-radius:8px;padding:7px 3px}
+.pred-lbl{font-size:8px;color:var(--mut);margin-bottom:3px}
+.pred-price{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal)}
+.pred-pct{font-size:9px;margin-top:2px}
+
+/* HGRID */
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:11px}
+.hbox{background:var(--bg2);border-radius:10px;padding:8px 10px;border:1px solid var(--b1)}
+.hbox-lbl{font-size:8px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.hbox-val{font-family:var(--mono);font-size:12px;font-weight:700}
+.hbox-sub{font-size:9px;color:var(--dim);margin-top:2px}
+
+/* ATH ROWS */
+.ath-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
+.ath-lbl{color:var(--mut)}
+.ath-val{font-family:var(--mono);font-weight:700}
+
+/* CATEGORY COLORS */
+.Bitcoin{background:#1c1000;color:#f59e0b}
+.Ethereum{background:#1a0f3a;color:#a78bfa}
+.Major{background:#0c2d5c;color:#93c5fd}
+.Meme{background:#3b0a28;color:#f9a8d4}
+.DeFi{background:#1e1040;color:#c4b5fd}
+.Gaming{background:#042e1e;color:#6ee7b7}
+.L1{background:#3b1200;color:#fdba74}
+.Web3{background:#042840;color:#7dd3fc}
+.AI{background:#28103c;color:#d8b4fe}
+.Exchange{background:#1c1a00;color:#fde68a}
+.Privacy{background:#1a0a2e;color:#c084fc}
+.Misc{background:#1e2836;color:#94a3b8}
+
+/* LOADING */
+.ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;gap:12px;padding:20px;text-align:center}
+.spin{width:34px;height:34px;border:3px solid var(--b1);border-top-color:var(--blu);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--b1);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:99}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;cursor:pointer;border:none;background:transparent;color:var(--dim);font-size:10px;font-weight:600}
+.nb.on{color:var(--blu)}
+.ni{font-size:20px;line-height:1}
+
+/* PROFIT */
+.rate-box{background:var(--bg2);border:1px solid var(--b2);border-radius:12px;padding:11px 13px;margin-bottom:11px}
+.rate-lbl{font-size:10px;color:var(--mut);margin-bottom:5px}
+.rate-inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:8px;padding:6px 10px;color:var(--blu);font-family:var(--mono);font-size:15px;font-weight:700;text-align:center}
+.rate-inp:focus{outline:none;border-color:var(--blu)}
+.pccard{border-radius:14px;padding:13px;margin-bottom:9px}
+.pccard.pSB{background:#0f0a1e;border:1px solid var(--pur)}
+.pccard.pBUY{background:#0a1e10;border:1px solid var(--gbd)}
+.pchead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.pcname{font-size:13px;font-weight:700}
+.pcsub{font-size:9px;color:var(--mut);margin-top:2px}
+.pcinp-row{display:flex;gap:8px;align-items:center;margin-bottom:5px}
+.pcinp-lbl{font-size:11px;color:var(--mut);flex-shrink:0}
+.pcinp{flex:1;background:var(--bg2);border:1px solid var(--b2);border-radius:8px;padding:5px 9px;color:var(--blu);font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
+.pcinp:focus{outline:none;border-color:var(--blu)}
+.pcmeta{font-size:10px;color:var(--dim);display:flex;justify-content:space-between;margin-bottom:3px;flex-wrap:wrap;gap:3px}
+.pcprofit{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--grn)}
+.pctotal{background:#0f6e4a;border:1px solid #10b981;border-radius:14px;padding:13px;margin-top:4px;display:flex;justify-content:space-between;align-items:center}
+.ptlbl{font-size:10px;color:#6ee7b7;font-weight:700}
+.ptval{font-family:var(--mono);font-size:20px;font-weight:700;color:#fff}
+
+/* ABOUT */
+.acard{background:var(--bg2);border:1px solid var(--b1);border-radius:14px;padding:13px;margin-bottom:9px}
+.atitle{font-size:10px;font-weight:700;color:var(--blu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+.acard p{font-size:12px;color:var(--mut);line-height:1.7;margin-bottom:4px}
+.fbox{background:var(--bg);border:1px solid var(--b2);border-radius:10px;padding:11px;margin:9px 0;font-family:var(--mono);font-size:10px;color:var(--teal);line-height:1.8}
+.qbox{background:var(--bg);border:1px solid #2a4a8a;border-radius:10px;padding:11px;margin:9px 0;font-family:var(--mono);font-size:10px;color:var(--blu);line-height:1.8}
+.warn{background:var(--rbg);border-color:var(--rbd)}
+.warn .atitle,.warn p{color:#fca5a5}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <div class="app-name">CRYPTO ANALYSER v6</div>
+      <div class="app-sub">500 coins · 20 Factors · Quantum + Scientific · Live prices</div>
+    </div>
+    <div class="hdr-badges">
+      <div class="badge load-badge" id="price-badge" onclick="fetchLivePrices()">Prices...</div>
+      <div class="badge load-badge" id="sig-badge"   onclick="loadSignals()">Signals...</div>
+    </div>
+  </div>
+  <div class="upd-txt" id="upd">Loading...</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="scr show" id="s-dash">
+  <div class="tabs">
+    <button class="tab on" onclick="flt('all',this)">All</button>
+    <button class="tab"    onclick="flt('STRONG BUY',this)">⭐ Strong</button>
+    <button class="tab"    onclick="flt('BUY',this)">🟢 BUY</button>
+    <button class="tab"    onclick="flt('WATCH',this)">🟡 WATCH</button>
+    <button class="tab"    onclick="flt('CAUTION',this)">🟠 Caution</button>
+    <button class="tab"    onclick="flt('AVOID',this)">🔴 Avoid</button>
+    <button class="tab"    onclick="flt('Bitcoin',this)">₿ BTC</button>
+    <button class="tab"    onclick="flt('Ethereum',this)">Ξ ETH</button>
+    <button class="tab"    onclick="flt('Major',this)">Major</button>
+    <button class="tab"    onclick="flt('Meme',this)">Meme</button>
+    <button class="tab"    onclick="flt('DeFi',this)">DeFi</button>
+    <button class="tab"    onclick="flt('AI/Data',this)">AI</button>
+    <button class="tab"    onclick="flt('Gaming',this)">Gaming</button>
+    <button class="tab"    onclick="flt('L1/L2',this)">L1/L2</button>
+    <button class="tab"    onclick="flt('Exchange',this)">Exchange</button>
+  </div>
+  <div class="mkt-bar" id="mkt-bar"></div>
+  <div class="sgrid"   id="stats"></div>
+  <div id="sb-banner"></div>
+  <div class="sec"><span id="sec-lbl">All Coins</span><span id="sec-cnt" style="color:var(--dim);font-family:var(--mono)"></span></div>
+  <div class="clist" id="clist">
+    <div class="ctr"><div class="spin"></div><p style="color:var(--blu);font-family:var(--mono);font-size:11px">Loading...</p></div>
+  </div>
+</div>
+
+<!-- PROFIT -->
+<div class="scr pad" id="s-profit">
+  <div class="rate-box">
+    <div class="rate-lbl">USD → INR Rate</div>
+    <input class="rate-inp" type="number" id="inr" value="84" oninput="renderProfit()">
+  </div>
+  <div id="plist"></div>
+</div>
+
+<!-- ABOUT -->
+<div class="scr pad" id="s-about">
+  <div class="acard">
+    <div class="atitle">How Live Prices Work</div>
+    <p>Prices fetch directly from CoinGecko every 60 seconds when app is open. Signals update automatically every 30 minutes via GitHub Actions.</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">20 Factors (weights)</div>
+    <div class="fbox"> 1. Alpha     11.8% — Outperformance vs Bitcoin
+ 2. MACD       9.1% — Trend direction
+ 3. Gamma      9.1% — Momentum acceleration
+ 4. RSI        8.2% — Overbought/oversold
+ 5. Stochastic 6.4% — Oversold confirmation
+ 6. Volume     7.3% — Volume surge
+ 7. Fear/Greed 5.5% — Market sentiment
+ 8. Bollinger  5.5% — Price band position
+ 9. Williams   4.6% — Oversold signal
+10. SAR        4.6% — Trend reversal
+11. Sharpe     3.6% — Risk-adjusted return
+12. Trend      3.6% — Multi-timeframe consistency
+13. ATH Upside 3.6% — Recovery potential
+14. BTC Dom    3.6% — Alt season
+15. OBV        3.6% — Buying pressure
+16. Fibonacci  2.7% — Key price levels
+17. Liquidity  1.8% — Ease of trading
+18. Halving    1.8% — Bitcoin cycle
+19. Mkt Cap    1.8% — Size tier
+20. Beta       1.8% — Sensitivity</div>
+  </div>
+  <div class="acard">
+    <div class="atitle">Scientific + Quantum Methods</div>
+    <div class="qbox">GBM         Geometric Brownian Motion
+                P(hit 10% in 30 days)
+
+Black-Scholes  N(d2) probability model
+                dS = μS·dt + σS·dW
+
+Monte Carlo   300-path simulation
+                P(target hit) via random walks
+
+Kalman Filter  Noise-filtered trend rate
+                x = x⁻ + K·(z - x⁻)
+
+Fibonacci      Golden ratio support levels
+                61.8% = strongest signal
+
+Shannon Entropy Market predictability
+                H = -Σ p·log₂(p)
+
+Quantum Score  Amplitude interference
+                P = |mean(√Pᵢ)|²</div>
+    <p>Scientific Confidence = BS(30%) + MC(30%) + GBM(20%) + Quantum(20%)</p>
+  </div>
+  <div class="acard">
+    <div class="atitle">Signal System (Relative Ranking)</div>
+    <p>⭐ <b style="color:var(--pur)">STRONG BUY</b> — Top 15% + positive 24h + Alpha &gt; 3%</p>
+    <p>🟢 <b style="color:var(--grn)">BUY</b> — Top 35% + positive 24h</p>
+    <p>🟡 <b style="color:var(--yel)">WATCH</b> — Top 60%</p>
+    <p>🟠 <b style="color:var(--ora)">CAUTION</b> — Bottom 20-40%</p>
+    <p>🔴 <b style="color:var(--red)">AVOID</b> — Bottom 15%</p>
+    <p style="margin-top:8px;font-size:10px;color:var(--dim)">Relative ranking always produces BUY signals in any market condition.</p>
+  </div>
+  <div class="acard warn">
+    <div class="atitle">Disclaimer</div>
+    <p>Educational purposes only. Not financial advice. You may lose all your money. Always do your own research.</p>
+  </div>
+</div>
+
+<nav class="bnav">
+  <button class="nb on" id="n1" onclick="nav('dash')"><span class="ni">📊</span>Dashboard</button>
+  <button class="nb"    id="n2" onclick="nav('profit')"><span class="ni">💰</span>Profit</button>
+  <button class="nb"    id="n3" onclick="nav('about')"><span class="ni">ℹ️</span>About</button>
+</nav>
+
+<script>
+let coins=[],curFlt='all',signalsLoaded=false;
+const $=id=>document.getElementById(id);
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fp(p){
+  if(!p||p===0)return '$0';
+  if(p>=10000)  return '$'+Math.round(p).toLocaleString('en-US');
+  if(p>=1000)   return '$'+p.toFixed(2);
+  if(p>=1)      return '$'+p.toFixed(3);
+  if(p<0.000001)return '$'+p.toFixed(9);
+  if(p<0.0001)  return '$'+p.toFixed(8);
+  if(p<0.01)    return '$'+p.toFixed(6);
+  return '$'+p.toFixed(4);
+}
+function pct(n){return(n>=0?'+':'')+Number(n).toFixed(2)+'%'}
+function inr(n){return '₹'+Math.round(n).toLocaleString('en-IN')}
+function num(n,d=1){return(n>=0?'+':'')+Number(n).toFixed(d)}
+function cc(n){return n>0?'var(--grn)':n<0?'var(--red)':'var(--mut)'}
+function chgCls(n){return n>0?'cp':n<0?'cn':'cz'}
+function catCls(c){
+  return{Bitcoin:'Bitcoin',Ethereum:'Ethereum',Major:'Major',Meme:'Meme',
+    DeFi:'DeFi',Gaming:'Gaming','L1/L2':'L1',Web3:'Web3','AI/Data':'AI',
+    Exchange:'Exchange',Privacy:'Privacy'}[c]||'Misc';
+}
+function ringCls(s){return{'STRONG BUY':'rSB',BUY:'rBUY',WATCH:'rW',CAUTION:'rC',AVOID:'rA'}[s]||'rA'}
+function cardCls(s){return{'STRONG BUY':'cSB',BUY:'cBUY',WATCH:'cWATCH',CAUTION:'cCAU',AVOID:'cAVO'}[s]||'cAVO'}
+function sigCls(s){return{'STRONG BUY':'sSB',BUY:'sBUY',WATCH:'sW',CAUTION:'sC',AVOID:'sA'}[s]||'sA'}
+function scoreColor(n){return n>=70?'var(--grn)':n>=50?'var(--yel)':'var(--red)'}
+function fColor(s){return s>=70?'var(--grn)':s>=45?'var(--yel)':'var(--red)'}
+function probColor(p){return p>=0.5?'var(--grn)':p>=0.3?'var(--yel)':'var(--red)'}
+
+// ── LIVE PRICE FETCHING (Solution 3) ──────────────────────────────────────────
+async function fetchLivePrices(){
+  $('price-badge').className='badge load-badge';
+  $('price-badge').textContent='Fetching...';
+  try{
+    if(!coins.length){
+      $('price-badge').className='badge live-badge';
+      $('price-badge').textContent='● LIVE';
+      return;
+    }
+    const ids=coins.slice(0,250).map(c=>c.cgId).filter(Boolean).join(',');
+    const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+
+    for(const[id,vals] of Object.entries(data)){
+      if(vals.usd){
+        const coin=coins.find(c=>c.cgId===id);
+        if(coin){
+          coin.price=vals.usd;
+          coin.change24h=parseFloat((vals.usd_24h_change||0).toFixed(4));
+          coin.target10pct=parseFloat((vals.usd*1.10).toFixed(8));
+        }
+      }
+    }
+
+    // Update DOM without re-rendering
+    document.querySelectorAll('[data-cgid]').forEach(el=>{
+      const coin=coins.find(c=>c.cgId===el.dataset.cgid);
+      if(!coin)return;
+      const pe=el.querySelector('.live-price');
+      const ce=el.querySelector('.live-chg');
+      const te=el.querySelector('.live-target');
+      if(pe){pe.textContent=fp(coin.price);pe.classList.add('updated');setTimeout(()=>pe.classList.remove('updated'),1500)}
+      if(ce){ce.textContent=pct(coin.change24h);ce.className='chg '+chgCls(coin.change24h)}
+      if(te){te.textContent='10% target → '+fp(coin.price*1.10)}
+    });
+
+    $('price-badge').className='badge live-badge';
+    $('price-badge').textContent='● LIVE';
+    const now=new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true});
+    $('upd').textContent='Prices live · '+now+' IST';
+  }catch(e){
+    $('price-badge').className='badge err-badge';
+    $('price-badge').textContent='Retry ↻';
+  }
+}
+
+// ── LOAD SIGNALS FROM prices.json ─────────────────────────────────────────────
+async function loadSignals(){
+  $('sig-badge').className='badge load-badge';
+  $('sig-badge').textContent='Signals...';
+  try{
+    const r=await fetch('data/prices.json?v='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(!d.coins||d.coins.length===0)
+      throw new Error('No data. Run GitHub Actions workflow first.');
+
+    coins=d.coins;
+    signalsLoaded=true;
+
+    $('sig-badge').className='badge live-badge';
+    $('sig-badge').textContent='✓ Signals';
+
+    const sb=coins.filter(c=>c.signal==='STRONG BUY').length;
+    const b =coins.filter(c=>c.signal==='BUY').length;
+    const w =coins.filter(c=>c.signal==='WATCH').length;
+    const av=coins.filter(c=>c.signal==='AVOID').length;
+    const tabs=document.querySelectorAll('.tab');
+    tabs[1].textContent=`⭐ Strong (${sb})`;
+    tabs[2].textContent=`🟢 BUY (${b})`;
+    tabs[3].textContent=`🟡 WATCH (${w})`;
+    tabs[5].textContent=`🔴 Avoid (${av})`;
+
+    renderMarketBar(d);
+    renderStats(d);
+    renderBanner();
+    renderCoins();
+    renderProfit();
+
+    $('upd').textContent='Signals: '+(d.updatedAtIST||'')+' · '+(d.engine||'');
+    await fetchLivePrices();
+  }catch(e){
+    $('sig-badge').className='badge err-badge';
+    $('sig-badge').textContent='✗ Error';
+    $('clist').innerHTML=`<div class="ctr"><p style="color:var(--red);font-size:12px;line-height:2">${e.message}<br><br>GitHub → Actions → Run workflow → wait 2 min</p></div>`;
+  }
+}
+
+// ── MARKET BAR ─────────────────────────────────────────────────────────────────
+function renderMarketBar(d){
+  const btc=coins.find(c=>c.symbol==='BTC');
+  const eth=coins.find(c=>c.symbol==='ETH');
+  const fg=d.fearGreed;
+  const fgC=fg<=30?'var(--grn)':fg<=50?'var(--yel)':fg<=70?'var(--ora)':'var(--red)';
+  $('mkt-bar').innerHTML=`
+    <div class="mkt-item"><div class="mkt-lbl">BTC</div><div class="mkt-val" style="color:#f59e0b">${btc?fp(btc.price):'—'}</div></div>
+    <div class="mkt-item"><div class="mkt-lbl">ETH</div><div class="mkt-val" style="color:var(--pur)">${eth?fp(eth.price):'—'}</div></div>
+    <div class="mkt-item"><div class="mkt-lbl">Fear/Greed</div><div class="mkt-val" style="color:${fgC}">${fg} — ${d.fearGreedClass||'—'}</div></div>
+    <div class="mkt-item"><div class="mkt-lbl">BTC Dom</div><div class="mkt-val" style="color:var(--blu)">${d.btcDominance}%</div></div>
+    <div class="mkt-item"><div class="mkt-lbl">Halving</div><div class="mkt-val" style="color:var(--gold)">${d.halvingScore}/100</div></div>
+    <div class="mkt-item"><div class="mkt-lbl">Coins</div><div class="mkt-val">${d.totalCoins}</div></div>`;
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────────────
+function renderStats(d){
+  const btc=coins.find(c=>c.symbol==='BTC');
+  const top=[...coins].sort((a,z)=>z.alpha-a.alpha)[0];
+  const topQ=[...coins].sort((a,z)=>(z.quantumScore||0)-(a.quantumScore||0))[0];
+  $('stats').innerHTML=`
+    <div class="sc"><div class="sc-lbl">⭐ Strong Buy</div><div class="sc-val" style="color:var(--pur)">${d.strongBuyCount}</div><div class="sc-sub">20-factor score</div></div>
+    <div class="sc"><div class="sc-lbl">🟢 Buy Today</div><div class="sc-val" style="color:var(--grn)">${d.buyCount}</div><div class="sc-sub">10% target</div></div>
+    <div class="sc"><div class="sc-lbl">₿ Bitcoin</div><div class="sc-val" style="color:#f59e0b;font-size:13px">${btc?fp(btc.price):'—'}</div><div class="sc-sub">${btc?pct(btc.change24h):''}</div></div>
+    <div class="sc"><div class="sc-lbl">⚛ Top Quantum</div><div class="sc-val" style="color:var(--blu);font-size:13px">${topQ?topQ.symbol:'—'}</div><div class="sc-sub">Q=${topQ?topQ.quantumScore.toFixed(0):''}</div></div>`;
+}
+
+// ── BANNER ─────────────────────────────────────────────────────────────────────
+function renderBanner(){
+  const top=coins.filter(c=>c.signal==='STRONG BUY').slice(0,6).map(c=>c.symbol);
+  if(!top.length){$('sb-banner').innerHTML='';return;}
+  $('sb-banner').innerHTML=`
+    <div class="sb-banner">
+      <div class="sb-title">⭐ Strong Buy — Best 20-Factor + Quantum Score</div>
+      <div class="sb-pills">${top.map(s=>`<span class="sb-pill">${s}</span>`).join('')}</div>
+      <div class="sb-sub">Tap any coin for full analysis: 20 factors + GBM + Black-Scholes + Monte Carlo + Quantum.</div>
+    </div>`;
+}
+
+// ── RENDER COINS ───────────────────────────────────────────────────────────────
+function renderCoins(){
+  const LABELS={all:'All Coins','STRONG BUY':'⭐ Strong Buy',BUY:'BUY Signals',
+    WATCH:'Watch List',CAUTION:'Caution',AVOID:'Avoid',
+    Bitcoin:'Bitcoin',Ethereum:'Ethereum',Major:'Major Coins',
+    Meme:'Meme Coins',DeFi:'DeFi','AI/Data':'AI / Data',
+    Gaming:'Gaming','L1/L2':'L1 / L2',Exchange:'Exchange'};
+
+  let list;
+  if(curFlt==='all') list=coins;
+  else if(['STRONG BUY','BUY','WATCH','CAUTION','AVOID'].includes(curFlt))
+    list=coins.filter(c=>c.signal===curFlt);
+  else list=coins.filter(c=>c.category===curFlt);
+
+  $('sec-lbl').textContent=LABELS[curFlt]||curFlt;
+  $('sec-cnt').textContent=list.length+' coins';
+
+  if(!list.length){
+    $('clist').innerHTML=`<div class="ctr"><p style="color:var(--mut)">No coins in this filter.</p></div>`;
+    return;
+  }
+  $('clist').innerHTML=list.map((c,i)=>buildCard(c,i)).join('');
+}
+
+// ── BUILD CARD ─────────────────────────────────────────────────────────────────
+function buildCard(c,i){
+  const sig=c.signal||'WATCH';
+  const p=c.pred||{};
+  const gbm=c.gbmProb||0,bs=c.bsProb||0,mc=c.mcProb||0;
+  const qs=c.quantumScore||50,sci=c.sciConfidence||0;
+  const kal=c.kalmanRate||0,ent=c.shannonScore||50;
+
+  const fBar=(label,score,color)=>`
+    <div class="fitem">
+      <div class="fi-lbl">${label}</div>
+      <div class="fi-bar"><div class="fi-fill" style="width:${score}%;background:${color}"></div></div>
+      <div class="fi-val" style="color:${color}">${score}</div>
+    </div>`;
+
+  const qColor=qs>=70?'var(--grn)':qs>=50?'var(--yel)':'var(--red)';
+  const sciColor=sci>=50?'var(--grn)':sci>=30?'var(--yel)':'var(--red)';
+
+  return `<div class="card ${cardCls(sig)}" id="card${i}" data-cgid="${c.cgId||''}" onclick="toggle(${i})">
+    <div class="cr1">
+      <div>
+        <div class="cname">${c.name}</div>
+        <div class="csym">${c.symbol}</div>
+        <span class="ccat ${catCls(c.category)}">${c.category||'Major'}</span>
+        <div class="crank">#${c.rank||i+1} by market cap</div>
+      </div>
+      <div class="cright">
+        <div class="ring ${ringCls(sig)}">${c.score}</div>
+        <span class="sigp ${sigCls(sig)}">${sig}</span>
+        <div style="font-size:9px;color:${qColor};font-family:var(--mono)">⚛${qs.toFixed(0)}</div>
+      </div>
+    </div>
+
+    <div class="prow">
+      <div class="price live-price" style="color:var(--txt)">${fp(c.price)}</div>
+      <span class="chg live-chg ${chgCls(c.change24h)}">${pct(c.change24h)}</span>
+    </div>
+
+    <div class="abg-row">
+      <div class="abg-box">
+        <div class="abg-lbl">α ALPHA</div>
+        <div class="abg-val" style="color:${cc(c.alpha)}">${num(c.alpha)}%</div>
+        <div class="abg-bar"><div class="abg-fill" style="width:${c.alphaSc||0}%;background:${cc(c.alpha)}"></div></div>
+      </div>
+      <div class="abg-box">
+        <div class="abg-lbl">β BETA</div>
+        <div class="abg-val" style="color:${(c.beta>=1.2&&c.beta<=3)?'var(--grn)':'var(--yel)'}">${Number(c.beta||0).toFixed(2)}x</div>
+        <div class="abg-bar"><div class="abg-fill" style="width:${c.betaSc||0}%;background:${(c.beta>=1.2&&c.beta<=3)?'var(--grn)':'var(--yel)'}"></div></div>
+      </div>
+      <div class="abg-box">
+        <div class="abg-lbl">γ GAMMA</div>
+        <div class="abg-val" style="color:${cc(c.gamma)}">${num(c.gamma,0)}%</div>
+        <div class="abg-bar"><div class="abg-fill" style="width:${c.gammaSc||0}%;background:${cc(c.gamma)}"></div></div>
+      </div>
+      <div class="abg-box">
+        <div class="abg-lbl">RSI</div>
+        <div class="abg-val" style="color:${(c.rsi||50)<=30?'var(--grn)':(c.rsi||50)>=70?'var(--red)':'var(--yel)'}">${Math.round(c.rsi||50)}</div>
+        <div class="abg-bar"><div class="abg-fill" style="width:${c.rsiSc||0}%;background:${(c.rsi||50)<=30?'var(--grn)':'var(--yel)'}"></div></div>
+      </div>
+    </div>
+
+    <div class="score-bar"><div class="score-fill" style="width:${c.score}%"></div></div>
+    <div class="cmeta">
+      <span>7d:<span style="color:${cc(c.change7d)}">${pct(c.change7d)}</span></span>
+      <span>30d:<span style="color:${cc(c.change30d)}">${pct(c.change30d)}</span></span>
+      <span>MC:${(mc*100).toFixed(0)}%</span>
+      <span>Q:${qs.toFixed(0)}</span>
+    </div>
+    <div class="target live-target">10% target → ${fp(c.target10pct||c.price*1.10)}</div>
+
+    <div class="xp">
+
+      <!-- SCIENTIFIC + QUANTUM ANALYSIS -->
+      <div class="sci-section">
+        <div class="sci-title">⚛ Scientific &amp; Quantum Analysis</div>
+        <div class="sci-grid">
+          <div class="sci-item">
+            <div class="sci-lbl">Quantum Score</div>
+            <div class="sci-val" style="color:${qColor}">${qs.toFixed(1)}/100</div>
+            <div class="sci-sub">Amplitude interference</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${qs}%;background:${qColor}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Sci Confidence</div>
+            <div class="sci-val" style="color:${sciColor}">${sci.toFixed(1)}%</div>
+            <div class="sci-sub">BS+MC+GBM+Quantum</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${sci}%;background:${sciColor}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">GBM P(+10%)</div>
+            <div class="sci-val" style="color:${probColor(gbm)}">${(gbm*100).toFixed(1)}%</div>
+            <div class="sci-sub">Brownian motion</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${gbm*100}%;background:${probColor(gbm)}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Black-Scholes</div>
+            <div class="sci-val" style="color:${probColor(bs)}">${(bs*100).toFixed(1)}%</div>
+            <div class="sci-sub">N(d2) probability</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${bs*100}%;background:${probColor(bs)}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Monte Carlo</div>
+            <div class="sci-val" style="color:${probColor(mc)}">${(mc*100).toFixed(1)}%</div>
+            <div class="sci-sub">300-path simulation</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${mc*100}%;background:${probColor(mc)}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Kalman Trend</div>
+            <div class="sci-val" style="color:${cc(kal)}">${kal>=0?'+':''}${kal.toFixed(3)}%/d</div>
+            <div class="sci-sub">Noise-filtered rate</div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Shannon Entropy</div>
+            <div class="sci-val" style="color:${ent>=70?'var(--grn)':'var(--yel)'}">${ent}/100</div>
+            <div class="sci-sub">Market predictability</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${ent}%;background:${ent>=70?'var(--grn)':'var(--yel)'}"></div></div>
+          </div>
+          <div class="sci-item">
+            <div class="sci-lbl">Fibonacci</div>
+            <div class="sci-val" style="color:${(c.fibonacci||0)>=70?'var(--grn)':'var(--mut)'}">${c.fibonacci||0}/100</div>
+            <div class="sci-sub">Golden ratio levels</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL 20 FACTOR SCORES -->
+      <div style="font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;font-weight:700">All 20 Factor Scores</div>
+      <div class="fgrid">
+        ${fBar('α Alpha',   c.alphaSc||0,   fColor(c.alphaSc||0))}
+        ${fBar('MACD',      c.macdSc||0,    fColor(c.macdSc||0))}
+        ${fBar('γ Gamma',   c.gammaSc||0,   fColor(c.gammaSc||0))}
+        ${fBar('RSI',       c.rsiSc||0,     fColor(c.rsiSc||0))}
+        ${fBar('Stoch',     c.stochSc||0,   fColor(c.stochSc||0))}
+        ${fBar('Volume',    c.volSc||0,     fColor(c.volSc||0))}
+        ${fBar('Fear/Greed',c.fearGreedSc||0,fColor(c.fearGreedSc||0))}
+        ${fBar('Bollinger', c.bollSc||0,    fColor(c.bollSc||0))}
+        ${fBar('Williams',  c.williamsSc||0,fColor(c.williamsSc||0))}
+        ${fBar('SAR',       c.sarSc||0,     fColor(c.sarSc||0))}
+        ${fBar('Sharpe',    c.sharpeSc||0,  fColor(c.sharpeSc||0))}
+        ${fBar('Trend',     c.trendSc||0,   fColor(c.trendSc||0))}
+        ${fBar('ATH Upside',c.athSc||0,     fColor(c.athSc||0))}
+        ${fBar('BTC Dom',   c.btcDomSc||0,  fColor(c.btcDomSc||0))}
+        ${fBar('OBV',       c.obvSc||0,     fColor(c.obvSc||0))}
+        ${fBar('Fibonacci', c.fibSc||0,     fColor(c.fibSc||0))}
+        ${fBar('Liquidity', c.liqSc||0,     fColor(c.liqSc||0))}
+        ${fBar('Halving',   c.halvingSc||0, fColor(c.halvingSc||0))}
+        ${fBar('Mkt Cap',   c.mcapSc||0,    fColor(c.mcapSc||0))}
+        ${fBar('β Beta',    c.betaSc||0,    fColor(c.betaSc||0))}
+      </div>
+
+      <!-- PREDICTION -->
+      <div class="pred-box">
+        <div class="pred-title">📈 Price Predictions (Dampened Momentum)</div>
+        <div class="pred-grid">
+          <div class="pred-item">
+            <div class="pred-lbl">7 Days</div>
+            <div class="pred-price">${p.d7?fp(p.d7.price):'—'}</div>
+            <div class="pred-pct" style="color:${p.d7&&p.d7.pct>=0?'var(--grn)':'var(--red)'}">${p.d7?p.d7.pct+'%':'—'}</div>
+          </div>
+          <div class="pred-item">
+            <div class="pred-lbl">30 Days</div>
+            <div class="pred-price">${p.d30?fp(p.d30.price):'—'}</div>
+            <div class="pred-pct" style="color:${p.d30&&p.d30.pct>=0?'var(--grn)':'var(--red)'}">${p.d30?p.d30.pct+'%':'—'}</div>
+          </div>
+          <div class="pred-item">
+            <div class="pred-lbl">90 Days</div>
+            <div class="pred-price">${p.d90?fp(p.d90.price):'—'}</div>
+            <div class="pred-pct" style="color:${p.d90&&p.d90.pct>=0?'var(--grn)':'var(--red)'}">${p.d90?p.d90.pct+'%':'—'}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRICE LEVELS & DETAILS -->
+      <div>
+        <div class="ath-row"><span class="ath-lbl">All-Time High</span><span class="ath-val" style="color:var(--grn)">${fp(c.ath||0)} <span style="color:var(--dim);font-size:9px">${c.athDate||''}</span></span></div>
+        <div class="ath-row"><span class="ath-lbl">% Below ATH</span><span class="ath-val" style="color:var(--red)">${c.athDrop||0}%</span></div>
+        <div class="ath-row"><span class="ath-lbl">24h High</span><span class="ath-val" style="color:var(--grn)">${fp(c.high24h||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">24h Low</span><span class="ath-val" style="color:var(--red)">${fp(c.low24h||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Support</span><span class="ath-val">${fp(c.support||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Resistance</span><span class="ath-val">${fp(c.resistance||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">1-Year</span><span class="ath-val" style="color:${cc(c.change1y)}">${pct(c.change1y||0)}</span></div>
+        <div class="ath-row"><span class="ath-lbl">Vol $M</span><span class="ath-val">${c.volumeM||0}M</span></div>
+        <div class="ath-row"><span class="ath-lbl">MCap $M</span><span class="ath-val">${c.marketCapM||0}M</span></div>
+        <div class="ath-row"><span class="ath-lbl">Fear/Greed</span><span class="ath-val" style="color:${(c.fearGreed||50)<=30?'var(--grn)':(c.fearGreed||50)>=70?'var(--red)':'var(--yel)'}">${c.fearGreed||50} — ${c.fearGreedClass||'Neutral'}</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggle(i){document.getElementById('card'+i).classList.toggle('expanded')}
+
+function flt(f,el){
+  curFlt=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  if(coins.length) renderCoins();
+}
+
+// ── PROFIT ─────────────────────────────────────────────────────────────────────
+function renderProfit(){
+  const buys=coins.filter(c=>c.signal==='STRONG BUY'||c.signal==='BUY').slice(0,12);
+  if(!buys.length){
+    $('plist').innerHTML=`<div class="ctr"><p style="color:var(--mut)">No BUY signals yet.<br>Run GitHub Actions first.</p></div>`;
+    return;
+  }
+  const defs=[500000,300000,200000,150000,100000,75000,50000,40000,30000,20000,15000,10000];
+  let ti=0,tp=0;
+  const html=buys.map((c,i)=>{
+    const inv=defs[i]||10000,prof=Math.round(inv*0.10);
+    ti+=inv;tp+=prof;
+    const isSB=c.signal==='STRONG BUY';
+    const p=c.pred||{};
+    const mc=(c.mcProb||0)*100;
+    return `<div class="pccard ${isSB?'pSB':'pBUY'}">
+      <div class="pchead">
+        <div>
+          <div class="pcname">${c.name} (${c.symbol})</div>
+          <div class="pcsub">Score ${c.score}/100 · Q=${(c.quantumScore||0).toFixed(0)} · MC=${mc.toFixed(0)}% · α${num(c.alpha)}%</div>
+        </div>
+        <span class="sigp ${isSB?'sSB':'sBUY'}">${c.signal}</span>
+      </div>
+      <div class="pcinp-row">
+        <span class="pcinp-lbl">Invest (₹)</span>
+        <input class="pcinp" type="number" value="${inv}" data-i="${i}" oninput="recalc(this)">
+      </div>
+      <div class="pcmeta">
+        <span>Price: ${fp(c.price)}</span>
+        <span>10% Target: ${fp(c.target10pct||c.price*1.10)}</span>
+        <span>30d pred: <span style="color:${p.d30&&p.d30.pct>=0?'var(--grn)':'var(--red)'}">${p.d30?p.d30.pct+'%':'—'}</span></span>
+      </div>
+      <div class="pcprofit" id="pa${i}">+ ${inr(prof)}</div>
+    </div>`;
+  }).join('');
+  $('plist').innerHTML=html+`
+    <div class="pctotal">
+      <div><div class="ptlbl">Total Invested</div><div style="font-family:var(--mono);font-size:12px;color:#6ee7b7;margin-top:2px">${inr(ti)}</div></div>
+      <div style="text-align:right"><div class="ptlbl">10% Profit</div><div class="ptval" id="ptot">+ ${inr(tp)}</div></div>
+    </div>`;
+}
+
+function recalc(el){
+  const i=parseInt(el.dataset.i),v=parseFloat(el.value)||0;
+  const pa=document.getElementById('pa'+i);
+  if(pa) pa.textContent='+ '+inr(Math.round(v*0.10));
+  let t=0;
+  document.querySelectorAll('.pcinp').forEach(inp=>t+=Math.round((parseFloat(inp.value)||0)*0.10));
+  const pt=$('ptot');
+  if(pt) pt.textContent='+ '+inr(t);
+}
+
+function nav(s){
+  document.querySelectorAll('.scr').forEach(el=>el.classList.remove('show'));
+  document.getElementById('s-'+s).classList.add('show');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  $({dash:'n1',profit:'n2',about:'n3'}[s]).classList.add('on');
+}
+
+// ── STARTUP ────────────────────────────────────────────────────────────────────
+loadSignals();
+setInterval(()=>{if(signalsLoaded) fetchLivePrices()}, 60*1000);
+setInterval(loadSignals, 30*60*1000);
+</script>
+</body>
+</html>
